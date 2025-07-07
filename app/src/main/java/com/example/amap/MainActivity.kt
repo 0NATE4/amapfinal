@@ -9,6 +9,8 @@ import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -34,6 +36,8 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
     private lateinit var aMap: AMap
     private lateinit var searchEditText: EditText
     private lateinit var nearbyButton: Button
+    private lateinit var resultsRecyclerView: RecyclerView
+    private lateinit var poiAdapter: POIResultsAdapter
     private var poiSearch: PoiSearch? = null
     private val poiMarkers = mutableListOf<Marker>()
 
@@ -65,8 +69,11 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
         searchEditText = findViewById(R.id.searchEditText)
         nearbyButton = findViewById(R.id.nearbyButton)
         setupSearch()
+        
+        // 4. Setup results list
+        setupResultsList()
 
-        // 4. Start the process of checking permissions and observing the ViewModel's state.
+        // 5. Start the process of checking permissions and observing the ViewModel's state.
         checkInitialPermissions()
         observeUiState()
     }
@@ -113,6 +120,17 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
         nearbyButton.setOnClickListener {
             performNearbySearch()
         }
+    }
+
+    private fun setupResultsList() {
+        resultsRecyclerView = findViewById(R.id.resultsRecyclerView)
+        poiAdapter = POIResultsAdapter { poiDisplayItem ->
+            // When user clicks on list item, focus on corresponding marker
+            focusOnPOI(poiDisplayItem.poiItem)
+        }
+        
+        resultsRecyclerView.layoutManager = LinearLayoutManager(this)
+        resultsRecyclerView.adapter = poiAdapter
     }
 
     private fun performPOISearch(keyword: String) {
@@ -207,6 +225,7 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
 
     private fun displayPOIResults(poiItems: List<PoiItem>) {
         val myLocation = aMap.myLocation
+        val displayItems = mutableListOf<POIDisplayItem>()
         
         for (poi in poiItems) {
             val latLng = LatLng(poi.latLonPoint.latitude, poi.latLonPoint.longitude)
@@ -229,8 +248,20 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
             
             poiMarkers.add(marker)
             
+            // Create display item for list
+            val displayItem = POIDisplayItem(
+                title = poi.title ?: "Unknown POI",
+                address = snippet,
+                poiItem = poi
+            )
+            displayItems.add(displayItem)
+            
             Log.d("POISearch", "Added marker: ${poi.title} at ${poi.latLonPoint.latitude}, ${poi.latLonPoint.longitude}")
         }
+        
+        // Update the list
+        poiAdapter.updateResults(displayItems)
+        resultsRecyclerView.visibility = if (displayItems.isNotEmpty()) RecyclerView.VISIBLE else RecyclerView.GONE
         
         // Move camera to show user location and first result
         if (poiItems.isNotEmpty()) {
@@ -263,6 +294,25 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
             marker.remove()
         }
         poiMarkers.clear()
+        
+        // Also clear the list
+        poiAdapter.clearResults()
+        resultsRecyclerView.visibility = RecyclerView.GONE
+    }
+
+    private fun focusOnPOI(poiItem: PoiItem) {
+        val latLng = LatLng(poiItem.latLonPoint.latitude, poiItem.latLonPoint.longitude)
+        aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+        
+        // Find and show info window for this POI
+        for (marker in poiMarkers) {
+            if (marker.position.latitude == latLng.latitude && marker.position.longitude == latLng.longitude) {
+                marker.showInfoWindow()
+                break
+            }
+        }
+        
+        Toast.makeText(this, "Focused on: ${poiItem.title}", Toast.LENGTH_SHORT).show()
     }
 
     // --- The MapView lifecycle methods MUST stay in the Activity ---
