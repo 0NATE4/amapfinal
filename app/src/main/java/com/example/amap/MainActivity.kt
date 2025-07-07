@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
+import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,6 +19,7 @@ import com.amap.api.maps.MapView
 import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Marker
 import com.amap.api.maps.model.MarkerOptions
+import com.amap.api.services.core.LatLonPoint
 import com.amap.api.services.core.PoiItem
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
@@ -31,6 +33,7 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
     private lateinit var mapView: MapView
     private lateinit var aMap: AMap
     private lateinit var searchEditText: EditText
+    private lateinit var nearbyButton: Button
     private var poiSearch: PoiSearch? = null
     private val poiMarkers = mutableListOf<Marker>()
 
@@ -60,6 +63,7 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
 
         // 3. Setup search functionality
         searchEditText = findViewById(R.id.searchEditText)
+        nearbyButton = findViewById(R.id.nearbyButton)
         setupSearch()
 
         // 4. Start the process of checking permissions and observing the ViewModel's state.
@@ -105,6 +109,10 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
                 false
             }
         }
+        
+        nearbyButton.setOnClickListener {
+            performNearbySearch()
+        }
     }
 
     private fun performPOISearch(keyword: String) {
@@ -122,10 +130,55 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
         poiSearch = PoiSearch(this, query)
         poiSearch?.setOnPoiSearchListener(this)
         
+        // Check if we can do nearby search based on user location
+        val myLocation = aMap.myLocation
+        if (myLocation != null) {
+            // Use nearby search around user's location (following Amap docs)
+            val userLatLonPoint = LatLonPoint(myLocation.latitude, myLocation.longitude)
+            val searchBound = PoiSearch.SearchBound(userLatLonPoint, 1000) // 1000 meters radius
+            poiSearch?.bound = searchBound
+            
+            Log.d("POISearch", "Using nearby search around user location: ${myLocation.latitude}, ${myLocation.longitude}")
+            Toast.makeText(this, "Searching for $keyword nearby...", Toast.LENGTH_SHORT).show()
+        } else {
+            // Fall back to general keyword search
+            Log.d("POISearch", "User location not available, using general search")
+            Toast.makeText(this, "Searching for $keyword...", Toast.LENGTH_SHORT).show()
+        }
+        
         // Step 4: Call searchPOIAsyn() method to send request
         poiSearch?.searchPOIAsyn()
+    }
+
+    private fun performNearbySearch() {
+        Log.d("POISearch", "Starting nearby search")
         
-        Toast.makeText(this, "Searching for $keyword...", Toast.LENGTH_SHORT).show()
+        val myLocation = aMap.myLocation
+        if (myLocation == null) {
+            Toast.makeText(this, "Location not available. Please enable location services.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Clear previous markers
+        clearPOIMarkers()
+        
+        // Search for general POIs nearby (empty keyword means all types)
+        val query = PoiSearch.Query("", "", "")  // Empty keyword for general nearby search
+        query.pageSize = 20  // More results for nearby search
+        query.pageNum = 1
+        
+        poiSearch = PoiSearch(this, query)
+        poiSearch?.setOnPoiSearchListener(this)
+        
+        // Set search bound around user location
+        val userLatLonPoint = LatLonPoint(myLocation.latitude, myLocation.longitude)
+        val searchBound = PoiSearch.SearchBound(userLatLonPoint, 500) // 500 meters for nearby discovery
+        poiSearch?.bound = searchBound
+        
+        Log.d("POISearch", "Searching nearby POIs around: ${myLocation.latitude}, ${myLocation.longitude}")
+        Toast.makeText(this, "Finding nearby places...", Toast.LENGTH_SHORT).show()
+        
+        poiSearch?.searchPOIAsyn()
     }
 
     // Step 5: Parse returned results through callback interface
@@ -153,14 +206,25 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
     }
 
     private fun displayPOIResults(poiItems: List<PoiItem>) {
+        val myLocation = aMap.myLocation
+        
         for (poi in poiItems) {
             val latLng = LatLng(poi.latLonPoint.latitude, poi.latLonPoint.longitude)
+            
+            // Calculate distance if we have user location
+            val snippet = if (myLocation != null) {
+                val distance = calculateDistance(myLocation.latitude, myLocation.longitude, 
+                                               poi.latLonPoint.latitude, poi.latLonPoint.longitude)
+                "${poi.snippet ?: poi.adName} • ${distance}m away"
+            } else {
+                poi.snippet ?: poi.adName
+            }
             
             val marker = aMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
                     .title(poi.title ?: "Unknown POI")
-                    .snippet(poi.snippet ?: poi.adName)
+                    .snippet(snippet)
             )
             
             poiMarkers.add(marker)
@@ -168,12 +232,30 @@ class MainActivity : AppCompatActivity(), PoiSearch.OnPoiSearchListener {
             Log.d("POISearch", "Added marker: ${poi.title} at ${poi.latLonPoint.latitude}, ${poi.latLonPoint.longitude}")
         }
         
-        // Move camera to first result
+        // Move camera to show user location and first result
         if (poiItems.isNotEmpty()) {
-            val firstPoi = poiItems[0]
-            val firstLatLng = LatLng(firstPoi.latLonPoint.latitude, firstPoi.latLonPoint.longitude)
-            aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(firstLatLng, 15f))
+            if (myLocation != null) {
+                // If we have user location, center between user and POIs
+                aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(
+                    LatLng(myLocation.latitude, myLocation.longitude), 14f))
+            } else {
+                // Otherwise center on first POI
+                val firstPoi = poiItems[0]
+                val firstLatLng = LatLng(firstPoi.latLonPoint.latitude, firstPoi.latLonPoint.longitude)
+                aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(firstLatLng, 15f))
+            }
         }
+    }
+
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Int {
+        val earthRadius = 6371000.0 // Earth radius in meters
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return (earthRadius * c).toInt()
     }
 
     private fun clearPOIMarkers() {
