@@ -27,7 +27,7 @@
         <!-- ADD YOUR AMAP KEY HERE (Inside the <application> tag) -->
         <meta-data
             android:name="com.amap.api.v2.apikey"
-            android:value="e676248d5eb741c3f18e4d92bd1e3f96" />
+            android:value="f7e69e105a57569fc6c5e8d5e36948d7" />
 
         <activity
             android:name=".MainActivity"
