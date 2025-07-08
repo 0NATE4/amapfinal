@@ -9,19 +9,21 @@ class SearchResultsProcessor {
 
     fun processResults(poiItems: List<PoiItem>, userLocation: Location?): List<POIDisplayItem> {
         return poiItems.map { poi ->
-            val snippet = if (userLocation != null) {
-                val distance = calculateDistance(
+            val address = poi.snippet ?: poi.adName ?: "Unknown address"
+            val distance = if (userLocation != null) {
+                val distanceMeters = calculateDistance(
                     userLocation.latitude, userLocation.longitude,
                     poi.latLonPoint.latitude, poi.latLonPoint.longitude
                 )
-                "${poi.snippet ?: poi.adName} • ${distance}m away"
+                formatDistance(distanceMeters)
             } else {
-                poi.snippet ?: poi.adName
+                "N/A"
             }
 
             POIDisplayItem(
                 title = poi.title ?: "Unknown POI",
-                address = snippet,
+                address = address,
+                distance = distance,
                 poiItem = poi
             )
         }
@@ -35,5 +37,14 @@ class SearchResultsProcessor {
                 Math.sin(dLon / 2) * Math.sin(dLon / 2)
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
         return (Constants.Distance.EARTH_RADIUS_METERS * c).toInt()
+    }
+
+    private fun formatDistance(meters: Int): String {
+        return if (meters < 1000) {
+            "${meters}m"
+        } else {
+            val km = meters / 1000.0
+            "%.1fkm".format(km)
+        }
     }
 } 

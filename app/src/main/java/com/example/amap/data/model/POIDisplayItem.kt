@@ -6,5 +6,6 @@ import com.amap.api.services.core.PoiItem
 data class POIDisplayItem(
     val title: String,
     val address: String,
+    val distance: String, // Distance from user location (e.g. "1.2km")
     val poiItem: PoiItem // Keep reference to original for map interaction
 ) 

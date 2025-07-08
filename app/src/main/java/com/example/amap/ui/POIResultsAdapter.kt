@@ -39,10 +39,12 @@ class POIResultsAdapter(
     inner class POIViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val titleText: TextView = itemView.findViewById(R.id.poiTitle)
         private val addressText: TextView = itemView.findViewById(R.id.poiAddress)
+        private val distanceText: TextView = itemView.findViewById(R.id.poiDistance)
 
         fun bind(poi: POIDisplayItem) {
             titleText.text = poi.title
             addressText.text = poi.address
+            distanceText.text = poi.distance
             
             itemView.setOnClickListener {
                 onItemClick(poi)

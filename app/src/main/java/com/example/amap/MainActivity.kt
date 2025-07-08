@@ -5,8 +5,10 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.EditText
+import android.widget.ImageView
 import android.view.View
 import android.widget.Toast
+import androidx.cardview.widget.CardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -37,6 +39,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mapView: MapView
     private lateinit var aMap: AMap
     private lateinit var searchEditText: EditText
+    private lateinit var clearButton: ImageView
+    private lateinit var searchContainer: CardView
+    private lateinit var resultsContainer: CardView
     private lateinit var myLocationButton: FloatingActionButton
     private lateinit var resultsRecyclerView: RecyclerView
     private lateinit var loadingOverlay: View
@@ -65,6 +70,7 @@ class MainActivity : AppCompatActivity() {
 
         initializeViews(savedInstanceState)
         setupBasicUI()
+        setupClearButton()
         
         checkInitialPermissions()
         observeUiState()
@@ -72,6 +78,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeViews(savedInstanceState: Bundle?) {
         searchEditText = findViewById(R.id.searchEditText)
+        clearButton = findViewById(R.id.clearButton)
+        searchContainer = findViewById(R.id.searchContainer)
+        resultsContainer = findViewById(R.id.resultsContainer)
         myLocationButton = findViewById(R.id.myLocationButton)
         resultsRecyclerView = findViewById(R.id.resultsRecyclerView)
         loadingOverlay = findViewById(R.id.loadingOverlay)
@@ -91,6 +100,15 @@ class MainActivity : AppCompatActivity() {
         }
         resultsRecyclerView.adapter = poiAdapter
     }
+
+    private fun setupClearButton() {
+        clearButton.setOnClickListener {
+            searchEditText.text.clear()
+            clearSearchResults()
+            hideResultsWithAnimation()
+            clearButton.visibility = View.GONE
+        }
+    }
     
     private fun initializeMapComponents() {
         mapController = MapController(aMap)
@@ -100,7 +118,10 @@ class MainActivity : AppCompatActivity() {
         searchResultsProcessor = SearchResultsProcessor()
         searchUIHandler = SearchUIHandler(
             searchEditText = searchEditText,
-            onSearch = { query -> performPOISearch(query) }
+            onSearch = { query -> performPOISearch(query) },
+            onTextChanged = { text -> 
+                clearButton.visibility = if (text.isNotEmpty()) View.VISIBLE else View.GONE
+            }
         )
         
         searchUIHandler.setupSearchListeners()
@@ -215,14 +236,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun performPOISearch(keyword: String) {
-        mapController.clearPOIMarkers()
+        if (::mapController.isInitialized) {
+            mapController.clearPOIMarkers()
+        }
         poiAdapter.clearResults()
         
         val userLocation = aMap.myLocation
         poiSearchManager.performKeywordSearch(keyword, userLocation)
     }
 
+    private fun clearSearchResults() {
+        if (::mapController.isInitialized) {
+            mapController.clearPOIMarkers()
+        }
+        poiAdapter.clearResults()
+        hideResultsWithAnimation()
+    }
 
+    private fun hideResultsWithAnimation() {
+        resultsContainer.animate()
+            .alpha(0f)
+            .setDuration(300)
+            .withEndAction {
+                resultsContainer.visibility = View.GONE
+            }
+    }
+
+    private fun showResultsWithAnimation() {
+        resultsContainer.visibility = View.VISIBLE
+        resultsContainer.alpha = 0f
+        resultsContainer.animate()
+            .alpha(1f)
+            .setDuration(300)
+    }
 
     private fun handleSearchResult(poiItems: List<PoiItem>?, success: Boolean, message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -237,17 +283,17 @@ class MainActivity : AppCompatActivity() {
             val displayItems = searchResultsProcessor.processResults(poiItems, userLocation)
             poiAdapter.updateResults(displayItems)
             
-            // Show/hide results list
-            resultsRecyclerView.visibility = if (displayItems.isNotEmpty()) {
-                RecyclerView.VISIBLE
+            // Show results if we have any
+            if (displayItems.isNotEmpty()) {
+                showResultsWithAnimation()
             } else {
-                RecyclerView.GONE
+                hideResultsWithAnimation()
             }
             
             // Center camera on results
             mapController.centerOnResults(poiItems, userLocation)
         } else {
-            resultsRecyclerView.visibility = RecyclerView.GONE
+            hideResultsWithAnimation()
         }
     }
 

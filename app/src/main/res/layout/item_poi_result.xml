@@ -3,33 +3,63 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="16dp"
     android:background="?android:attr/selectableItemBackground"
     android:clickable="true">
 
-    <TextView
-        android:id="@+id/poiTitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"
-        android:text="POI Title" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/poiAddress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textSize="14sp"
-        android:textColor="@android:color/darker_gray"
-        android:text="POI Address" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/poiTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/search_text"
+                android:fontFamily="sans-serif-medium"
+                android:text="POI Title" />
+
+            <TextView
+                android:id="@+id/poiAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textSize="13sp"
+                android:textColor="@color/search_hint"
+                android:fontFamily="sans-serif"
+                android:text="POI Address" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/poiDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textSize="12sp"
+            android:textColor="@color/search_icon"
+            android:fontFamily="sans-serif-medium"
+            android:text="1.2km" />
+
+    </LinearLayout>
+
+    <!-- Subtle divider -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="8dp"
-        android:background="@android:color/darker_gray"
-        android:alpha="0.2" />
+        android:layout_height="0.5dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/search_border"
+        android:alpha="0.3" />
 
 </LinearLayout> 

@@ -2,4 +2,16 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Modern UI Colors -->
+    <color name="search_background">#FAFAFA</color>
+    <color name="search_border">#E0E0E0</color>
+    <color name="search_hint">#9E9E9E</color>
+    <color name="search_text">#212121</color>
+    <color name="search_icon">#757575</color>
+    <color name="results_background">#FFFFFF</color>
+    <color name="results_shadow">#1A000000</color>
+    
+    <!-- Status colors -->
+    <color name="overlay_loading">#E0000000</color>
 </resources>
