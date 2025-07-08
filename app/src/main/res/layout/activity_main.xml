@@ -35,7 +35,7 @@
             android:id="@+id/nearbyButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nearby"
+            android:text="🔍 Nearby"
             android:textSize="12sp"
             android:padding="8dp" />
 
@@ -63,5 +63,16 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- My Location Button - floating over map -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/myLocationButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@android:drawable/ic_menu_mylocation"
+        android:contentDescription="My Location"
+        app:layout_constraintBottom_toBottomOf="@id/map"
+        app:layout_constraintEnd_toEndOf="@id/map" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

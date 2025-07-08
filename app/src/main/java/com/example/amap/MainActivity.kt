@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var aMap: AMap
     private lateinit var searchEditText: EditText
     private lateinit var nearbyButton: Button
+    private lateinit var myLocationButton: FloatingActionButton
     private lateinit var resultsRecyclerView: RecyclerView
     private lateinit var poiAdapter: POIResultsAdapter
     
@@ -72,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         
         searchEditText = findViewById(R.id.searchEditText)
         nearbyButton = findViewById(R.id.nearbyButton)
+        myLocationButton = findViewById(R.id.myLocationButton)
         resultsRecyclerView = findViewById(R.id.resultsRecyclerView)
     }
 
@@ -98,6 +101,14 @@ class MainActivity : AppCompatActivity() {
         
         resultsRecyclerView.layoutManager = LinearLayoutManager(this)
         resultsRecyclerView.adapter = poiAdapter
+        
+        // Setup my location button
+        myLocationButton.setOnClickListener {
+            val success = mapController.centerOnUserLocation()
+            if (!success) {
+                Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun checkInitialPermissions() {
@@ -132,11 +143,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun performNearbySearch() {
+        searchUIHandler.hideKeyboard()  // Hide keyboard when nearby button is pressed
         mapController.clearPOIMarkers()
         poiAdapter.clearResults()
         
         val userLocation = aMap.myLocation
-        poiSearchManager.performNearbySearch(userLocation)
+        val currentQuery = searchUIHandler.getCurrentQuery()
+        
+        if (currentQuery.isNotEmpty()) {
+            // Use current search term for nearby search with closer radius
+            poiSearchManager.performNearbyKeywordSearch(currentQuery, userLocation)
+            Toast.makeText(this, "Searching for '$currentQuery' nearby...", Toast.LENGTH_SHORT).show()
+        } else {
+            // Generic nearby search when no search term
+            poiSearchManager.performNearbySearch(userLocation)
+            Toast.makeText(this, "Finding all nearby places...", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun handleSearchResult(poiItems: List<PoiItem>?, success: Boolean, message: String) {

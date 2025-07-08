@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.MyLocationStyle
+import com.example.amap.core.Constants
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -21,10 +22,12 @@ class MapViewModel : ViewModel() {
     }
 
     fun setupLocationStyle(aMap: AMap) {
-        // This is pure map configuration logic, it belongs here.
+        // Configure location style to show user location without auto-following
         val myLocationStyle = MyLocationStyle()
-        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
-        myLocationStyle.interval(2000)
+        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)  // Show location, don't follow
+        myLocationStyle.interval(Constants.Map.LOCATION_UPDATE_INTERVAL)
+        myLocationStyle.strokeColor(android.graphics.Color.argb(0, 0, 0, 0))  // Remove stroke
+        myLocationStyle.radiusFillColor(android.graphics.Color.argb(0, 0, 0, 0))  // Remove accuracy circle
 
         aMap.myLocationStyle = myLocationStyle
         aMap.isMyLocationEnabled = true

@@ -1,7 +1,9 @@
 package com.example.amap.ui
 
+import android.content.Context
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 
@@ -11,6 +13,8 @@ class SearchUIHandler(
     private val onSearch: (String) -> Unit,
     private val onNearbySearch: () -> Unit
 ) {
+
+    private val inputMethodManager = searchEditText.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
     fun setupSearchListeners() {
         searchEditText.setOnEditorActionListener { _, actionId, event ->
@@ -31,8 +35,13 @@ class SearchUIHandler(
     private fun performSearch() {
         val query = searchEditText.text.toString().trim()
         if (isValidQuery(query)) {
+            hideKeyboard()
             onSearch(query)
         }
+    }
+
+    fun hideKeyboard() {
+        inputMethodManager.hideSoftInputFromWindow(searchEditText.windowToken, 0)
     }
 
     fun isValidQuery(query: String): Boolean {

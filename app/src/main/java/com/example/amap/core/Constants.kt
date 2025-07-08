@@ -15,7 +15,7 @@ object Constants {
         const val DEFAULT_ZOOM_LEVEL = 14f
         const val POI_FOCUS_ZOOM_LEVEL = 16f
         const val SEARCH_RESULTS_ZOOM_LEVEL = 15f
-        const val LOCATION_UPDATE_INTERVAL = 2000L // milliseconds
+        const val LOCATION_UPDATE_INTERVAL = 5000L // milliseconds
     }
     
     // Search Result Codes

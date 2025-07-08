@@ -1,9 +1,12 @@
 package com.example.amap.ui
 
+import android.content.Context
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -20,6 +23,12 @@ class SearchUIHandlerTest {
     fun setup() {
         mockSearchEditText = mockk(relaxed = true)
         mockNearbyButton = mockk(relaxed = true)
+        
+        // Mock the context and InputMethodManager
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockInputMethodManager = mockk<InputMethodManager>(relaxed = true)
+        every { mockSearchEditText.context } returns mockContext
+        every { mockContext.getSystemService(Context.INPUT_METHOD_SERVICE) } returns mockInputMethodManager
         
         searchUIHandler = SearchUIHandler(
             searchEditText = mockSearchEditText,
@@ -119,5 +128,23 @@ class SearchUIHandlerTest {
             val actual = searchUIHandler.isValidQuery(query.trim())
             assertEquals("Query '$query' should be $expected", expected, actual)
         }
+    }
+
+    @Test
+    fun `hideKeyboard should call InputMethodManager correctly`() {
+        // Given - SearchUIHandler with mocked dependencies
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockInputMethodManager = mockk<InputMethodManager>(relaxed = true)
+        val mockWindowToken = mockk<android.os.IBinder>()
+        
+        every { mockSearchEditText.context } returns mockContext
+        every { mockContext.getSystemService(Context.INPUT_METHOD_SERVICE) } returns mockInputMethodManager
+        every { mockSearchEditText.windowToken } returns mockWindowToken
+        
+        // When - hiding keyboard
+        searchUIHandler.hideKeyboard()
+        
+        // Then - should call InputMethodManager with correct parameters
+        verify { mockInputMethodManager.hideSoftInputFromWindow(mockWindowToken, 0) }
     }
 } 

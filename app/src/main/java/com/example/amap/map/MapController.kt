@@ -8,6 +8,7 @@ import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Marker
 import com.amap.api.maps.model.MarkerOptions
 import com.amap.api.services.core.PoiItem
+import com.example.amap.core.Constants
 
 class MapController(private val aMap: AMap) {
 
@@ -54,7 +55,7 @@ class MapController(private val aMap: AMap) {
 
     fun focusOnPOI(poiItem: PoiItem) {
         val latLng = LatLng(poiItem.latLonPoint.latitude, poiItem.latLonPoint.longitude)
-        aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+        aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, Constants.Map.POI_FOCUS_ZOOM_LEVEL))
         
         // Find and show info window for this POI
         for (marker in poiMarkers) {
@@ -66,29 +67,39 @@ class MapController(private val aMap: AMap) {
         }
     }
 
+    fun centerOnUserLocation(): Boolean {
+        val userLocation = aMap.myLocation
+        return if (userLocation != null) {
+            val userLatLng = LatLng(userLocation.latitude, userLocation.longitude)
+            aMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, Constants.Map.DEFAULT_ZOOM_LEVEL))
+            true
+        } else {
+            false
+        }
+    }
+
     fun centerOnResults(poiItems: List<PoiItem>, userLocation: Location?) {
         if (poiItems.isEmpty()) return
         
         if (userLocation != null) {
             // Center between user and POIs
             aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                LatLng(userLocation.latitude, userLocation.longitude), 14f))
+                LatLng(userLocation.latitude, userLocation.longitude), Constants.Map.DEFAULT_ZOOM_LEVEL))
         } else {
             // Center on first POI
             val firstPoi = poiItems[0]
             val firstLatLng = LatLng(firstPoi.latLonPoint.latitude, firstPoi.latLonPoint.longitude)
-            aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(firstLatLng, 15f))
+            aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(firstLatLng, Constants.Map.SEARCH_RESULTS_ZOOM_LEVEL))
         }
     }
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Int {
-        val earthRadius = 6371000.0 // Earth radius in meters
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2)
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return (earthRadius * c).toInt()
+        return (Constants.Distance.EARTH_RADIUS_METERS * c).toInt()
     }
 } 
