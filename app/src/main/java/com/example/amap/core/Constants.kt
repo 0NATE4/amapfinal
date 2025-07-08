@@ -5,9 +5,7 @@ object Constants {
     // Search Configuration
     object Search {
         const val DEFAULT_PAGE_SIZE = 10
-        const val NEARBY_PAGE_SIZE = 20
         const val DEFAULT_SEARCH_RADIUS = 1000 // meters
-        const val NEARBY_SEARCH_RADIUS = 500 // meters
     }
     
     // Map Configuration

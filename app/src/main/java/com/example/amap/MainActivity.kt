@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -34,7 +33,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mapView: MapView
     private lateinit var aMap: AMap
     private lateinit var searchEditText: EditText
-    private lateinit var nearbyButton: Button
     private lateinit var myLocationButton: FloatingActionButton
     private lateinit var resultsRecyclerView: RecyclerView
     private lateinit var poiAdapter: POIResultsAdapter
@@ -73,7 +71,6 @@ class MainActivity : AppCompatActivity() {
         aMap = mapView.map
         
         searchEditText = findViewById(R.id.searchEditText)
-        nearbyButton = findViewById(R.id.nearbyButton)
         myLocationButton = findViewById(R.id.myLocationButton)
         resultsRecyclerView = findViewById(R.id.resultsRecyclerView)
     }
@@ -86,9 +83,7 @@ class MainActivity : AppCompatActivity() {
         searchResultsProcessor = SearchResultsProcessor()
         searchUIHandler = SearchUIHandler(
             searchEditText = searchEditText,
-            nearbyButton = nearbyButton,
-            onSearch = { query -> performPOISearch(query) },
-            onNearbySearch = { performNearbySearch() }
+            onSearch = { query -> performPOISearch(query) }
         )
         
         poiAdapter = POIResultsAdapter { poiDisplayItem ->
@@ -127,11 +122,26 @@ class MainActivity : AppCompatActivity() {
                 if (state.isLocationPermissionGranted) {
                     Log.d("MainActivity", "State updated: Permission is now granted.")
                     viewModel.setupLocationStyle(aMap)
+                    
+                    // Center on user location when first opening the app
+                    centerOnUserLocationInitial()
                 } else {
                     Log.d("MainActivity", "State updated: Permission is not granted.")
                 }
             }
         }
+    }
+
+    private fun centerOnUserLocationInitial() {
+        // Give the map a moment to get location after permission is granted
+        searchEditText.postDelayed({
+            val success = mapController.centerOnUserLocation()
+            if (success) {
+                Log.d("MainActivity", "Centered on user location at startup")
+            } else {
+                Log.d("MainActivity", "Could not center on user location at startup")
+            }
+        }, 1000) // Wait 1 second for location to be available
     }
 
     private fun performPOISearch(keyword: String) {
@@ -142,24 +152,7 @@ class MainActivity : AppCompatActivity() {
         poiSearchManager.performKeywordSearch(keyword, userLocation)
     }
 
-    private fun performNearbySearch() {
-        searchUIHandler.hideKeyboard()  // Hide keyboard when nearby button is pressed
-        mapController.clearPOIMarkers()
-        poiAdapter.clearResults()
-        
-        val userLocation = aMap.myLocation
-        val currentQuery = searchUIHandler.getCurrentQuery()
-        
-        if (currentQuery.isNotEmpty()) {
-            // Use current search term for nearby search with closer radius
-            poiSearchManager.performNearbyKeywordSearch(currentQuery, userLocation)
-            Toast.makeText(this, "Searching for '$currentQuery' nearby...", Toast.LENGTH_SHORT).show()
-        } else {
-            // Generic nearby search when no search term
-            poiSearchManager.performNearbySearch(userLocation)
-            Toast.makeText(this, "Finding all nearby places...", Toast.LENGTH_SHORT).show()
-        }
-    }
+
 
     private fun handleSearchResult(poiItems: List<PoiItem>?, success: Boolean, message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()

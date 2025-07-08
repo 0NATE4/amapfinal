@@ -4,14 +4,11 @@ import android.content.Context
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
 import android.widget.EditText
 
 class SearchUIHandler(
     private val searchEditText: EditText,
-    private val nearbyButton: Button,
-    private val onSearch: (String) -> Unit,
-    private val onNearbySearch: () -> Unit
+    private val onSearch: (String) -> Unit
 ) {
 
     private val inputMethodManager = searchEditText.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -25,10 +22,6 @@ class SearchUIHandler(
             } else {
                 false
             }
-        }
-        
-        nearbyButton.setOnClickListener {
-            onNearbySearch()
         }
     }
 

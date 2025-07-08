@@ -39,54 +39,7 @@ class POISearchManager(
         poiSearch?.searchPOIAsyn()
     }
 
-    fun performNearbySearch(userLocation: Location?) {
-        Log.d("POISearch", "Starting nearby search")
-        
-        if (userLocation == null) {
-            onSearchResult(null, false, "Location not available. Please enable location services.")
-            return
-        }
-        
-        val query = PoiSearch.Query("", "", "")  // Empty keyword for general nearby search
-        query.pageSize = Constants.Search.NEARBY_PAGE_SIZE
-        query.pageNum = 1
-        
-        poiSearch = PoiSearch(context, query)
-        poiSearch?.setOnPoiSearchListener(this)
-        
-        val userLatLonPoint = LatLonPoint(userLocation.latitude, userLocation.longitude)
-        val searchBound = PoiSearch.SearchBound(userLatLonPoint, Constants.Search.NEARBY_SEARCH_RADIUS)
-        poiSearch?.bound = searchBound
-        
-        Log.d("POISearch", "Searching nearby POIs around: ${userLocation.latitude}, ${userLocation.longitude}")
-        
-        poiSearch?.searchPOIAsyn()
-    }
 
-    fun performNearbyKeywordSearch(keyword: String, userLocation: Location?) {
-        Log.d("POISearch", "Starting nearby search for: $keyword")
-        
-        if (userLocation == null) {
-            onSearchResult(null, false, "Location not available for nearby search")
-            return
-        }
-        
-        val query = PoiSearch.Query(keyword, "", "")
-        query.pageSize = Constants.Search.DEFAULT_PAGE_SIZE
-        query.pageNum = 1
-        
-        poiSearch = PoiSearch(context, query)
-        poiSearch?.setOnPoiSearchListener(this)
-        
-        // Use closer radius for nearby searches
-        val userLatLonPoint = LatLonPoint(userLocation.latitude, userLocation.longitude)
-        val searchBound = PoiSearch.SearchBound(userLatLonPoint, Constants.Search.NEARBY_SEARCH_RADIUS)
-        poiSearch?.bound = searchBound
-        
-        Log.d("POISearch", "Using nearby keyword search around: ${userLocation.latitude}, ${userLocation.longitude}")
-        
-        poiSearch?.searchPOIAsyn()
-    }
 
     override fun onPoiSearched(result: PoiResult?, rCode: Int) {
         Log.d("POISearch", "Search result received. Code: $rCode")

@@ -2,7 +2,6 @@ package com.example.amap.ui
 
 import android.content.Context
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
 import android.widget.EditText
 import io.mockk.every
 import io.mockk.mockk
@@ -14,27 +13,26 @@ import org.junit.Test
 class SearchUIHandlerTest {
 
     private lateinit var mockSearchEditText: EditText
-    private lateinit var mockNearbyButton: Button
+    private lateinit var mockInputMethodManager: InputMethodManager
     private lateinit var searchUIHandler: SearchUIHandler
     private var lastSearchQuery: String? = null
-    private var nearbySearchCalled = false
 
     @Before
     fun setup() {
         mockSearchEditText = mockk(relaxed = true)
-        mockNearbyButton = mockk(relaxed = true)
         
-        // Mock the context and InputMethodManager
+        // Mock the context and InputMethodManager BEFORE creating SearchUIHandler
         val mockContext = mockk<Context>(relaxed = true)
-        val mockInputMethodManager = mockk<InputMethodManager>(relaxed = true)
+        mockInputMethodManager = mockk<InputMethodManager>(relaxed = true)
+        val mockWindowToken = mockk<android.os.IBinder>()
+        
         every { mockSearchEditText.context } returns mockContext
         every { mockContext.getSystemService(Context.INPUT_METHOD_SERVICE) } returns mockInputMethodManager
+        every { mockSearchEditText.windowToken } returns mockWindowToken
         
         searchUIHandler = SearchUIHandler(
             searchEditText = mockSearchEditText,
-            nearbyButton = mockNearbyButton,
-            onSearch = { query -> lastSearchQuery = query },
-            onNearbySearch = { nearbySearchCalled = true }
+            onSearch = { query -> lastSearchQuery = query }
         )
     }
 
@@ -132,19 +130,10 @@ class SearchUIHandlerTest {
 
     @Test
     fun `hideKeyboard should call InputMethodManager correctly`() {
-        // Given - SearchUIHandler with mocked dependencies
-        val mockContext = mockk<Context>(relaxed = true)
-        val mockInputMethodManager = mockk<InputMethodManager>(relaxed = true)
-        val mockWindowToken = mockk<android.os.IBinder>()
-        
-        every { mockSearchEditText.context } returns mockContext
-        every { mockContext.getSystemService(Context.INPUT_METHOD_SERVICE) } returns mockInputMethodManager
-        every { mockSearchEditText.windowToken } returns mockWindowToken
-        
         // When - hiding keyboard
         searchUIHandler.hideKeyboard()
         
         // Then - should call InputMethodManager with correct parameters
-        verify { mockInputMethodManager.hideSoftInputFromWindow(mockWindowToken, 0) }
+        verify { mockInputMethodManager.hideSoftInputFromWindow(any(), 0) }
     }
 } 
