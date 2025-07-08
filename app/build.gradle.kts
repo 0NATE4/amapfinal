@@ -52,7 +52,15 @@ dependencies {
     // implementation(libs.androidx.activity) <-- The new dependency replaces this one, you can remove the old one.
     implementation(libs.androidx.constraintlayout)
     implementation("com.amap.api:3dmap-location-search:latest.integration") // Amap dependency
+    
+    // Testing dependencies
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation("io.mockk:mockk:1.13.8")
+    
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation("androidx.test:rules:1.5.0")
+    androidTestImplementation("androidx.test:runner:1.5.2")
 }
