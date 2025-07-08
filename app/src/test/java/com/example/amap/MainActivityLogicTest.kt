@@ -3,6 +3,7 @@ package com.example.amap
 import com.amap.api.services.core.LatLonPoint
 import com.amap.api.services.core.PoiItem
 import com.amap.api.services.poisearch.PoiResult
+import com.example.amap.data.model.POIDisplayItem
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.*

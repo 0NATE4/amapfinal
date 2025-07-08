@@ -1,18 +1,12 @@
-package com.example.amap
+package com.example.amap.ui
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.amap.api.services.core.PoiItem
-
-// Simple data class for POI display
-data class POIDisplayItem(
-    val title: String,
-    val address: String,
-    val poiItem: PoiItem // Keep reference to original for map interaction
-)
+import com.example.amap.R
+import com.example.amap.data.model.POIDisplayItem
 
 class POIResultsAdapter(
     private val onItemClick: (POIDisplayItem) -> Unit
