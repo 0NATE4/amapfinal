@@ -45,6 +45,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Loading overlay - black screen covering ENTIRE screen -->
+    <View
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:elevation="100dp"
+        android:clickable="true"
+        android:focusable="true" />
+
     <!-- My Location Button - floating over map -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/myLocationButton"

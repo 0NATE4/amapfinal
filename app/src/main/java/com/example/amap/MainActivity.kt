@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.EditText
+import android.view.View
 import android.widget.Toast
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,7 +16,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.amap.api.maps.AMap
+import com.amap.api.maps.CameraUpdateFactory
+import com.amap.api.maps.LocationSource
 import com.amap.api.maps.MapView
+import com.amap.api.maps.model.LatLng
 import com.amap.api.services.core.PoiItem
 import com.example.amap.data.model.POIDisplayItem
 import com.example.amap.map.MapViewModel
@@ -35,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchEditText: EditText
     private lateinit var myLocationButton: FloatingActionButton
     private lateinit var resultsRecyclerView: RecyclerView
+    private lateinit var loadingOverlay: View
     private lateinit var poiAdapter: POIResultsAdapter
     
     // Components
@@ -44,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchUIHandler: SearchUIHandler
 
     private val viewModel: MapViewModel by viewModels()
+    private var mapReadyForDisplay = false
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -58,24 +64,35 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         initializeViews(savedInstanceState)
-        initializeComponents()
-        setupUI()
+        setupBasicUI()
         
         checkInitialPermissions()
         observeUiState()
     }
 
     private fun initializeViews(savedInstanceState: Bundle?) {
-        mapView = findViewById(R.id.map)
-        mapView.onCreate(savedInstanceState)
-        aMap = mapView.map
-        
         searchEditText = findViewById(R.id.searchEditText)
         myLocationButton = findViewById(R.id.myLocationButton)
         resultsRecyclerView = findViewById(R.id.resultsRecyclerView)
+        loadingOverlay = findViewById(R.id.loadingOverlay)
+        
+        mapView = findViewById(R.id.map)
+        // Don't create map yet - wait until we're ready to show it
     }
 
-    private fun initializeComponents() {
+    private fun setupBasicUI() {
+        // Setup basic UI that doesn't depend on map
+        resultsRecyclerView.layoutManager = LinearLayoutManager(this)
+        
+        poiAdapter = POIResultsAdapter { poiDisplayItem ->
+            if (::mapController.isInitialized) {
+                focusOnPOI(poiDisplayItem.poiItem)
+            }
+        }
+        resultsRecyclerView.adapter = poiAdapter
+    }
+    
+    private fun initializeMapComponents() {
         mapController = MapController(aMap)
         poiSearchManager = POISearchManager(this) { poiItems, success, message ->
             handleSearchResult(poiItems, success, message)
@@ -86,16 +103,7 @@ class MainActivity : AppCompatActivity() {
             onSearch = { query -> performPOISearch(query) }
         )
         
-        poiAdapter = POIResultsAdapter { poiDisplayItem ->
-            focusOnPOI(poiDisplayItem.poiItem)
-        }
-    }
-
-    private fun setupUI() {
         searchUIHandler.setupSearchListeners()
-        
-        resultsRecyclerView.layoutManager = LinearLayoutManager(this)
-        resultsRecyclerView.adapter = poiAdapter
         
         // Setup my location button
         myLocationButton.setOnClickListener {
@@ -104,6 +112,8 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show()
             }
         }
+        
+        Log.d("MainActivity", "Map components initialized")
     }
 
     private fun checkInitialPermissions() {
@@ -121,27 +131,87 @@ class MainActivity : AppCompatActivity() {
             viewModel.uiState.collectLatest { state ->
                 if (state.isLocationPermissionGranted) {
                     Log.d("MainActivity", "State updated: Permission is now granted.")
+                    
+                    // Initialize map only when we have permission
+                    if (!::aMap.isInitialized) {
+                        initializeMap()
+                    }
+                    
                     viewModel.setupLocationStyle(aMap)
                     
-                    // Center on user location when first opening the app
-                    centerOnUserLocationInitial()
+                    // Wait for actual location before showing map
+                    waitForLocationAndShowMap()
                 } else {
                     Log.d("MainActivity", "State updated: Permission is not granted.")
                 }
             }
         }
     }
+    
+    private fun initializeMap() {
+        mapView.onCreate(null)
+        aMap = mapView.map
+        
+        // Set initial camera to world view to avoid Beijing default
+        aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(0.0, 0.0), 2f))
+        
+        // Now initialize components that depend on the map
+        initializeMapComponents()
+        
+        Log.d("MainActivity", "Map initialized")
+    }
 
-    private fun centerOnUserLocationInitial() {
-        // Give the map a moment to get location after permission is granted
-        searchEditText.postDelayed({
+    private fun waitForLocationAndShowMap() {
+        var attempts = 0
+        val maxAttempts = 20 // 10 seconds max
+        
+        val locationChecker = object : Runnable {
+            override fun run() {
+                val location = aMap.myLocation
+                attempts++
+                
+                if (location != null) {
+                    // Got location! Center map and show it
+                    Log.d("MainActivity", "Location found: ${location.latitude}, ${location.longitude}")
+                    showMapWithLocation(location)
+                } else if (attempts < maxAttempts) {
+                    // Try again in 500ms
+                    Log.d("MainActivity", "Waiting for location... attempt $attempts")
+                    searchEditText.postDelayed(this, 500)
+                } else {
+                    // Timeout - show map anyway with fallback message
+                    Log.w("MainActivity", "Location timeout - showing map without centering")
+                    showMapWithoutLocation()
+                }
+            }
+        }
+        
+        // Start checking for location
+        searchEditText.postDelayed(locationChecker, 500)
+    }
+    
+    private fun showMapWithLocation(location: android.location.Location) {
+        if (!mapReadyForDisplay) {
             val success = mapController.centerOnUserLocation()
             if (success) {
                 Log.d("MainActivity", "Centered on user location at startup")
-            } else {
-                Log.d("MainActivity", "Could not center on user location at startup")
             }
-        }, 1000) // Wait 1 second for location to be available
+            showMapAndHideLoading()
+        }
+    }
+    
+    private fun showMapWithoutLocation() {
+        if (!mapReadyForDisplay) {
+            Log.d("MainActivity", "Showing map without location centering")
+            showMapAndHideLoading()
+            Toast.makeText(this, "Could not determine location", Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    private fun showMapAndHideLoading() {
+        mapReadyForDisplay = true
+        loadingOverlay.visibility = View.GONE
+        Log.d("MainActivity", "Map is now visible")
     }
 
     private fun performPOISearch(keyword: String) {
@@ -189,22 +259,32 @@ class MainActivity : AppCompatActivity() {
     // --- The MapView lifecycle methods MUST stay in the Activity ---
     override fun onResume() {
         super.onResume()
-        mapView.onResume()
+        if (::aMap.isInitialized) {
+            mapView.onResume()
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        mapView.onPause()
+        if (::aMap.isInitialized) {
+            mapView.onPause()
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        poiSearchManager.cleanup()
-        mapView.onDestroy()
+        if (::poiSearchManager.isInitialized) {
+            poiSearchManager.cleanup()
+        }
+        if (::aMap.isInitialized) {
+            mapView.onDestroy()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        mapView.onSaveInstanceState(outState)
+        if (::aMap.isInitialized) {
+            mapView.onSaveInstanceState(outState)
+        }
     }
 }
