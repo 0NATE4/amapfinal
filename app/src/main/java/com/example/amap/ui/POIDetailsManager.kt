@@ -2,7 +2,11 @@ package com.example.amap.ui
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -15,9 +19,7 @@ import com.example.amap.data.model.POIDisplayItem
 import com.example.amap.data.model.POIRichDetails
 import com.example.amap.search.POIWebService
 import com.example.amap.ui.ReviewsAdapter
-import com.example.amap.ui.TagsAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 
 class POIDetailsManager(
@@ -59,17 +61,24 @@ class POIDetailsManager(
     
     private fun populateBasicInfo(view: View, poiDisplayItem: POIDisplayItem) {
         view.findViewById<TextView>(R.id.detailTitle).text = poiDisplayItem.title
-        view.findViewById<TextView>(R.id.detailAddress).text = poiDisplayItem.address
+        
+        // Create subtitle with category and address
+        val poiItem = poiDisplayItem.poiItem
+        val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
+        val shortAddress = poiDisplayItem.address.split(",").firstOrNull() ?: poiDisplayItem.address
+        view.findViewById<TextView>(R.id.detailSubtitle).text = "$category • $shortAddress"
+        
+        // Set distance in the info section
         view.findViewById<TextView>(R.id.detailDistance).text = poiDisplayItem.distance
     }
     
     private fun showLoadingState(view: View) {
         view.findViewById<View>(R.id.loadingContainer).visibility = View.VISIBLE
         view.findViewById<View>(R.id.errorMessage).visibility = View.GONE
-        view.findViewById<View>(R.id.ratingCostContainer).visibility = View.GONE
+        view.findViewById<View>(R.id.infoHours).visibility = View.GONE
+        view.findViewById<View>(R.id.infoRating).visibility = View.GONE
+        view.findViewById<View>(R.id.infoCost).visibility = View.GONE
         view.findViewById<View>(R.id.contactContainer).visibility = View.GONE
-        view.findViewById<View>(R.id.tagsLabel).visibility = View.GONE
-        view.findViewById<RecyclerView>(R.id.tagsRecyclerView).visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.photosRecyclerView).visibility = View.GONE
         view.findViewById<View>(R.id.reviewsLabel).visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.reviewsRecyclerView).visibility = View.GONE
@@ -117,72 +126,36 @@ class POIDetailsManager(
         // Hide loading
         view.findViewById<View>(R.id.loadingContainer).visibility = View.GONE
         
-        // Show rating and cost if available
-        val ratingCostContainer = view.findViewById<View>(R.id.ratingCostContainer)
-        val ratingText = view.findViewById<TextView>(R.id.detailRating)
-        val costText = view.findViewById<TextView>(R.id.detailCost)
-        
-        var hasRatingOrCost = false
-        
-        richDetails.rating?.let { rating ->
-            ratingText.text = "★ $rating"
-            ratingText.visibility = View.VISIBLE
-            hasRatingOrCost = true
-        } ?: run {
-            ratingText.visibility = View.GONE
-        }
-        
-        richDetails.cost?.let { cost ->
-            costText.text = cost
-            costText.visibility = View.VISIBLE
-            hasRatingOrCost = true
-        } ?: run {
-            costText.visibility = View.GONE
-        }
-        
-        ratingCostContainer.visibility = if (hasRatingOrCost) View.VISIBLE else View.GONE
-        
-        // Show contact info if available
-        val contactContainer = view.findViewById<View>(R.id.contactContainer)
-        val phoneText = view.findViewById<TextView>(R.id.detailPhone)
-        val hoursText = view.findViewById<TextView>(R.id.detailHours)
-        val costInfoText = view.findViewById<TextView>(R.id.detailCostInfo)
-        
-        var hasContactInfo = false
-        
-        richDetails.telephone?.let { phone ->
-            phoneText.text = "📞 $phone"
-            phoneText.visibility = View.VISIBLE
-            hasContactInfo = true
-        } ?: run {
-            phoneText.visibility = View.GONE
-        }
-        
+        // Show hours if available
         richDetails.openHours?.let { hours ->
-            hoursText.text = "🕒 $hours"
-            hoursText.visibility = View.VISIBLE
-            hasContactInfo = true
-        } ?: run {
-            hoursText.visibility = View.GONE
+            val hoursContainer = view.findViewById<View>(R.id.infoHours)
+            val hoursText = view.findViewById<TextView>(R.id.detailHours)
+            hoursText.text = formatOpeningHours(hours)
+            hoursContainer.visibility = View.VISIBLE
         }
         
+        // Show rating if available
+        richDetails.rating?.let { rating ->
+            val ratingContainer = view.findViewById<View>(R.id.infoRating)
+            val ratingText = view.findViewById<TextView>(R.id.detailRating)
+            ratingText.text = "★ $rating"
+            ratingContainer.visibility = View.VISIBLE
+        }
+        
+        // Show cost if available (convert to yuan symbols)
         richDetails.cost?.let { cost ->
-            costInfoText.text = "💰 Average cost: $cost"
-            costInfoText.visibility = View.VISIBLE
-            hasContactInfo = true
-        } ?: run {
-            costInfoText.visibility = View.GONE
+            val costContainer = view.findViewById<View>(R.id.infoCost)
+            val costText = view.findViewById<TextView>(R.id.detailCost)
+            setupYuanDisplay(costText, cost)
+            costContainer.visibility = View.VISIBLE
         }
         
-        contactContainer.visibility = if (hasContactInfo) View.VISIBLE else View.GONE
-        
-        // Show tags if available
-        if (richDetails.tags.isNotEmpty()) {
-            view.findViewById<View>(R.id.tagsLabel).visibility = View.VISIBLE
-            val tagsRecyclerView = view.findViewById<RecyclerView>(R.id.tagsRecyclerView)
-            tagsRecyclerView.visibility = View.VISIBLE
-            tagsRecyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            tagsRecyclerView.adapter = TagsAdapter(richDetails.tags)
+        // Show phone number if available
+        richDetails.telephone?.let { phone ->
+            val contactContainer = view.findViewById<View>(R.id.contactContainer)
+            val phoneText = view.findViewById<TextView>(R.id.detailPhone)
+            phoneText.text = phone
+            contactContainer.visibility = View.VISIBLE
         }
         
         // Show photos if available
@@ -205,6 +178,114 @@ class POIDetailsManager(
         }
     }
     
+    private fun formatOpeningHours(hours: String): String {
+        // Just return the time, clean and simple
+        return when {
+            hours.lowercase().contains("closed") -> "Closed"
+            hours.lowercase().contains("24") -> "24 hours"
+            hours.contains("-") -> {
+                val parts = hours.split("-")
+                if (parts.size == 2) {
+                    val openTime = formatTime(parts[0].trim())
+                    val closeTime = formatTime(parts[1].trim())
+                    "$openTime-$closeTime"
+                } else {
+                    hours
+                }
+            }
+            else -> hours
+        }
+    }
+    
+    private fun formatTime(time: String): String {
+        // Convert 24-hour time to 12-hour format with PM/AM
+        return when {
+            time.contains(":") -> {
+                val parts = time.split(":")
+                if (parts.size >= 2) {
+                    val hour = parts[0].toIntOrNull() ?: return time
+                    when {
+                        hour == 0 -> "12${if (parts.size > 1) ":${parts[1]}" else ""}AM"
+                        hour < 12 -> "${hour}${if (parts.size > 1) ":${parts[1]}" else ""}AM"
+                        hour == 12 -> "12${if (parts.size > 1) ":${parts[1]}" else ""}PM"
+                        else -> "${hour - 12}${if (parts.size > 1) ":${parts[1]}" else ""}PM"
+                    }
+                } else time
+            }
+            else -> time
+        }
+    }
+    
+    private fun setupYuanDisplay(textView: TextView, cost: String) {
+        val yuanLevel = convertToYuanLevel(cost)
+        val spannable = SpannableStringBuilder()
+        
+        // Add active yuan symbols in normal color
+        for (i in 1..yuanLevel) {
+            spannable.append("¥")
+        }
+        
+        // Add ghost yuan symbols in light gray
+        val ghostColor = Color.parseColor("#CCCCCC")
+        val startGhost = spannable.length
+        for (i in yuanLevel + 1..4) {
+            spannable.append("¥")
+        }
+        val endGhost = spannable.length
+        
+        if (startGhost < endGhost) {
+            spannable.setSpan(
+                ForegroundColorSpan(ghostColor),
+                startGhost,
+                endGhost,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        
+        textView.text = spannable
+    }
+    
+    private fun convertToYuanLevel(cost: String): Int {
+        // Extract numbers from cost string and classify based on price ranges
+        val numbers = extractNumbers(cost)
+        val level = if (numbers.isNotEmpty()) {
+            val avgPrice = numbers.average()
+            Log.d(TAG, "Cost '$cost' -> numbers: $numbers, avgPrice: $avgPrice")
+            when {
+                avgPrice < 25 -> 1   // ¥ - Cheap (< 25)
+                avgPrice < 80 -> 2   // ¥¥ - Moderate (25-80)
+                avgPrice < 300 -> 3  // ¥¥¥ - Expensive (80-300)
+                else -> 4            // ¥¥¥¥ - Very expensive (300+)
+            }
+        } else {
+            // Fallback to text analysis
+            Log.d(TAG, "Cost '$cost' -> no numbers found, using text analysis")
+            when {
+                cost.lowercase().contains("cheap") || cost.contains("低") -> 1
+                cost.lowercase().contains("moderate") || cost.contains("中") -> 2
+                cost.lowercase().contains("expensive") || cost.contains("高") -> 3
+                cost.lowercase().contains("very expensive") || cost.contains("非常") -> 4
+                cost.length <= 10 -> 1 // Short descriptions are usually cheap
+                else -> 2 // Default to moderate
+            }
+        }
+        
+        Log.d(TAG, "Final yuan level: $level (${("¥".repeat(level))})")
+        return level
+    }
+    
+    private fun extractNumbers(text: String): List<Double> {
+        val numbers = mutableListOf<Double>()
+        
+        // Regex to find numbers (including decimals)
+        val regex = "\\d+(?:\\.\\d+)?".toRegex()
+        regex.findAll(text).forEach { match ->
+            match.value.toDoubleOrNull()?.let { numbers.add(it) }
+        }
+        
+        return numbers
+    }
+    
     private fun showErrorState(view: View, errorMessage: String) {
         view.findViewById<View>(R.id.loadingContainer).visibility = View.GONE
         val errorText = view.findViewById<TextView>(R.id.errorMessage)
@@ -213,14 +294,25 @@ class POIDetailsManager(
     }
     
     private fun setupActionButtons(view: View, poiDisplayItem: POIDisplayItem) {
-        val navigateButton = view.findViewById<MaterialButton>(R.id.navigateButton)
-        val shareButton = view.findViewById<MaterialButton>(R.id.shareButton)
+        // Call button
+        view.findViewById<View>(R.id.actionCall).setOnClickListener {
+            // Placeholder - will implement later
+            Log.d(TAG, "Call button clicked")
+        }
         
-        navigateButton.setOnClickListener {
+        // Directions button
+        view.findViewById<View>(R.id.actionDirections).setOnClickListener {
             openNavigation(poiDisplayItem)
         }
         
-        shareButton.setOnClickListener {
+        // Website button
+        view.findViewById<View>(R.id.actionWebsite).setOnClickListener {
+            // Placeholder - will implement later
+            Log.d(TAG, "Website button clicked")
+        }
+        
+        // Share button
+        view.findViewById<View>(R.id.actionShare).setOnClickListener {
             sharePOI(poiDisplayItem)
         }
     }

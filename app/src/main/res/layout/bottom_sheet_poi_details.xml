@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@android:color/white"
-    android:padding="16dp">
+    android:background="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,96 +15,316 @@
             android:layout_width="40dp"
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp"
-            android:background="#CCCCCC"
-            android:backgroundTint="#E0E0E0" />
+            android:background="#CCCCCC" />
 
-        <!-- POI Title and Basic Info -->
+        <!-- Header Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/detailTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="POI Name"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="#1a1a1a"
+                android:lineSpacingExtra="2dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/detailSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Category • Location"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="8dp" />
+
+        </LinearLayout>
+
+        <!-- Action Buttons Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="20dp">
 
+            <!-- Call Button -->
             <LinearLayout
+                android:id="@+id/actionCall"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:gravity="center"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/circle_background_blue"
+                    android:layout_marginBottom="8dp" />
 
                 <TextView
-                    android:id="@+id/detailTitle"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="POI Name"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="#212121" />
-
-                <TextView
-                    android:id="@+id/detailAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Address"
-                    android:textSize="14sp"
-                    android:textColor="#757575"
-                    android:layout_marginTop="4dp" />
+                    android:text="Call"
+                    android:textSize="12sp"
+                    android:textColor="#1976D2" />
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/detailDistance"
-                android:layout_width="wrap_content"
+            <!-- Directions Button -->
+            <LinearLayout
+                android:id="@+id/actionDirections"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="1.2km"
-                android:textSize="14sp"
-                android:textColor="#2196F3"
-                android:textStyle="bold"
-                android:layout_gravity="center_vertical" />
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:gravity="center"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/circle_background_blue"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Directions"
+                    android:textSize="12sp"
+                    android:textColor="#1976D2" />
+
+            </LinearLayout>
+
+            <!-- Website Button -->
+            <LinearLayout
+                android:id="@+id/actionWebsite"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:gravity="center"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/circle_background_gray"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Website"
+                    android:textSize="12sp"
+                    android:textColor="#666666" />
+
+            </LinearLayout>
+
+            <!-- Share Button -->
+            <LinearLayout
+                android:id="@+id/actionShare"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:gravity="center"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/circle_background_gray"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Share"
+                    android:textSize="12sp"
+                    android:textColor="#666666" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Rating and Cost Row -->
+        <!-- Info Row (Hours, Rating, Cost, Distance) -->
         <LinearLayout
-            android:id="@+id/ratingCostContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone">
+            android:paddingHorizontal="20dp"
+            android:layout_marginBottom="20dp">
 
-            <TextView
-                android:id="@+id/detailRating"
-                android:layout_width="wrap_content"
+            <!-- Hours - Give more space for longer text -->
+            <LinearLayout
+                android:id="@+id/infoHours"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="★ 4.5"
-                android:textSize="16sp"
-                android:textColor="#FF9800"
-                android:textStyle="bold"
-                android:background="#FFF3E0"
-                android:padding="6dp"
-                android:layout_marginEnd="12dp" />
+                android:layout_weight="1.5"
+                android:orientation="vertical"
+                android:paddingEnd="12dp"
+                android:visibility="gone">
 
-            <TextView
-                android:id="@+id/detailCost"
-                android:layout_width="wrap_content"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="HOURS"
+                    android:textSize="10sp"
+                    android:textColor="#999999"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.1"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:id="@+id/detailHours"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10AM-10PM"
+                    android:textSize="13sp"
+                    android:textColor="#1a1a1a"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+            <!-- Rating -->
+            <LinearLayout
+                android:id="@+id/infoRating"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="¥¥"
-                android:textSize="16sp"
-                android:textColor="#4CAF50"
-                android:textStyle="bold"
-                android:background="#E8F5E8"
-                android:padding="6dp" />
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingHorizontal="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="RATING"
+                    android:textSize="10sp"
+                    android:textColor="#999999"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.1"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:id="@+id/detailRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="★ 4.2"
+                    android:textSize="13sp"
+                    android:textColor="#1a1a1a"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Cost -->
+            <LinearLayout
+                android:id="@+id/infoCost"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.8"
+                android:orientation="vertical"
+                android:paddingHorizontal="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="COST"
+                    android:textSize="10sp"
+                    android:textColor="#999999"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.1"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:id="@+id/detailCost"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="¥¥"
+                    android:textSize="13sp"
+                    android:textColor="#1a1a1a"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Distance -->
+            <LinearLayout
+                android:id="@+id/infoDistance"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingStart="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DISTANCE"
+                    android:textSize="10sp"
+                    android:textColor="#999999"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.1"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:id="@+id/detailDistance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="4.9 mi"
+                    android:textSize="13sp"
+                    android:textColor="#1a1a1a"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Contact Info -->
+        <!-- Photos Section -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/photosRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:layout_marginBottom="20dp"
+            android:clipToPadding="false"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:visibility="gone" />
+
+        <!-- Contact Info Section -->
         <LinearLayout
             android:id="@+id/contactContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="16dp"
+            android:paddingHorizontal="20dp"
+            android:layout_marginBottom="20dp"
             android:visibility="gone">
 
             <TextView
@@ -113,57 +332,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="📞 +86-123-456-7890"
-                android:textSize="14sp"
-                android:textColor="#212121"
-                android:layout_marginBottom="4dp"
+                android:textSize="16sp"
+                android:textColor="#1a1a1a"
+                android:padding="12dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:drawablePadding="12dp"
+                android:layout_marginBottom="8dp"
                 android:autoLink="phone" />
 
-            <TextView
-                android:id="@+id/detailHours"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="🕒 09:00-22:00"
-                android:textSize="14sp"
-                android:textColor="#212121"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:id="@+id/detailCostInfo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="💰 Average cost: ¥¥"
-                android:textSize="14sp"
-                android:textColor="#212121" />
-
         </LinearLayout>
-
-        <!-- Tags -->
-        <TextView
-            android:id="@+id/tagsLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Tags"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#212121"
-            android:layout_marginBottom="8dp"
-            android:visibility="gone" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/tagsRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone" />
-
-        <!-- Photos Section -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/photosRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone" />
 
         <!-- Reviews Section -->
         <TextView
@@ -171,17 +348,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Reviews"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#212121"
-            android:layout_marginBottom="8dp"
+            android:textColor="#1a1a1a"
+            android:paddingHorizontal="20dp"
+            android:layout_marginBottom="12dp"
             android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/reviewsRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="20dp"
+            android:paddingHorizontal="20dp"
             android:visibility="gone"
             android:nestedScrollingEnabled="false" />
 
@@ -192,7 +371,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:padding="20dp">
+            android:padding="40dp">
 
             <ProgressBar
                 android:layout_width="24dp"
@@ -219,34 +398,6 @@
             android:gravity="center"
             android:padding="20dp"
             android:visibility="gone" />
-
-        <!-- Action Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="16dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/navigateButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Navigate"
-                android:textColor="@android:color/white"
-                app:backgroundTint="#2196F3"
-                android:layout_marginEnd="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/shareButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Share"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_marginStart="8dp" />
-
-        </LinearLayout>
 
     </LinearLayout>
 
