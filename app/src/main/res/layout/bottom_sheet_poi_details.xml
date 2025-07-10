@@ -124,6 +124,15 @@
                 android:layout_height="wrap_content"
                 android:text="🕒 09:00-22:00"
                 android:textSize="14sp"
+                android:textColor="#212121"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/detailCostInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="💰 Average cost: ¥¥"
+                android:textSize="14sp"
                 android:textColor="#212121" />
 
         </LinearLayout>
@@ -155,6 +164,26 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp"
             android:visibility="gone" />
+
+        <!-- Reviews Section -->
+        <TextView
+            android:id="@+id/reviewsLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Reviews"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#212121"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/reviewsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            android:nestedScrollingEnabled="false" />
 
         <!-- Loading Indicator -->
         <LinearLayout

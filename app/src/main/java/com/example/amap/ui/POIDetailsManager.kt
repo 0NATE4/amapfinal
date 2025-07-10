@@ -14,6 +14,8 @@ import com.example.amap.R
 import com.example.amap.data.model.POIDisplayItem
 import com.example.amap.data.model.POIRichDetails
 import com.example.amap.search.POIWebService
+import com.example.amap.ui.ReviewsAdapter
+import com.example.amap.ui.TagsAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
@@ -69,6 +71,8 @@ class POIDetailsManager(
         view.findViewById<View>(R.id.tagsLabel).visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.tagsRecyclerView).visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.photosRecyclerView).visibility = View.GONE
+        view.findViewById<View>(R.id.reviewsLabel).visibility = View.GONE
+        view.findViewById<RecyclerView>(R.id.reviewsRecyclerView).visibility = View.GONE
     }
     
     private fun fetchRichDetails(view: View, poiDisplayItem: POIDisplayItem) {
@@ -142,6 +146,7 @@ class POIDetailsManager(
         val contactContainer = view.findViewById<View>(R.id.contactContainer)
         val phoneText = view.findViewById<TextView>(R.id.detailPhone)
         val hoursText = view.findViewById<TextView>(R.id.detailHours)
+        val costInfoText = view.findViewById<TextView>(R.id.detailCostInfo)
         
         var hasContactInfo = false
         
@@ -161,6 +166,14 @@ class POIDetailsManager(
             hoursText.visibility = View.GONE
         }
         
+        richDetails.cost?.let { cost ->
+            costInfoText.text = "💰 Average cost: $cost"
+            costInfoText.visibility = View.VISIBLE
+            hasContactInfo = true
+        } ?: run {
+            costInfoText.visibility = View.GONE
+        }
+        
         contactContainer.visibility = if (hasContactInfo) View.VISIBLE else View.GONE
         
         // Show tags if available
@@ -178,6 +191,17 @@ class POIDetailsManager(
             photosRecyclerView.visibility = View.VISIBLE
             photosRecyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             photosRecyclerView.adapter = PhotosAdapter(richDetails.photos)
+        }
+        
+        // Show reviews if available
+        richDetails.reviews?.let { reviewsList ->
+            if (reviewsList.isNotEmpty()) {
+                view.findViewById<View>(R.id.reviewsLabel).visibility = View.VISIBLE
+                val reviewsRecyclerView = view.findViewById<RecyclerView>(R.id.reviewsRecyclerView)
+                reviewsRecyclerView.visibility = View.VISIBLE
+                reviewsRecyclerView.layoutManager = LinearLayoutManager(context)
+                reviewsRecyclerView.adapter = ReviewsAdapter(reviewsList)
+            }
         }
     }
     

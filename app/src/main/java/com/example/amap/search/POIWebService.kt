@@ -72,7 +72,7 @@ class POIWebService(private val apiKey: String) {
         try {
             val url = "$BASE_URL/detail?" +
                     "id=${URLEncoder.encode(poiId, "UTF-8")}" +
-                    "&show_fields=photos,rating,cost,opentime,tel,business_area,tag" +
+                    "&show_fields=photos,business,children,indoor,navi" +
                     "&key=$apiKey"
 
             Log.d(TAG, "Fetching POI details: $url")
@@ -114,7 +114,7 @@ class POIWebService(private val apiKey: String) {
             val url = "$BASE_URL/around?" +
                     "location=${URLEncoder.encode(location, "UTF-8")}" +
                     "&radius=$radius" +
-                    "&show_fields=photos,rating,cost,opentime,tel,business_area,tag" +
+                    "&show_fields=photos,business,children,indoor,navi" +
                     "&page_size=20" +
                     "&key=$apiKey"
 
@@ -221,13 +221,70 @@ class POIWebService(private val apiKey: String) {
         }
         Log.d(TAG, "Found ${tags.size} tags: $tags")
 
-        val rating = poi.optString("rating").takeIf { it.isNotBlank() }
-        val cost = poi.optString("cost").takeIf { it.isNotBlank() }
-        val openHours = poi.optString("opentime").takeIf { it.isNotBlank() }
-        val telephone = poi.optString("tel").takeIf { it.isNotBlank() }
-        val businessArea = poi.optString("business_area").takeIf { it.isNotBlank() }
+        // Parse reviews/comments
+        val reviews = mutableListOf<POIReview>()
+        poi.optJSONArray("comments")?.let { commentsArray ->
+            Log.d(TAG, "Found ${commentsArray.length()} comments")
+            for (i in 0 until commentsArray.length()) {
+                val comment = commentsArray.getJSONObject(i)
+                reviews.add(POIReview(
+                    content = comment.optString("content", ""),
+                    rating = comment.optString("rating"),
+                    author = comment.optString("author")
+                ))
+            }
+        }
         
-        Log.d(TAG, "Parsed: rating=$rating, cost=$cost, phone=$telephone")
+        // Try alternative reviews field
+        poi.optJSONArray("reviews")?.let { reviewsArray ->
+            Log.d(TAG, "Found ${reviewsArray.length()} reviews")
+            for (i in 0 until reviewsArray.length()) {
+                val review = reviewsArray.getJSONObject(i)
+                reviews.add(POIReview(
+                    content = review.optString("content", ""),
+                    rating = review.optString("star", review.optString("rating")),
+                    author = review.optString("author", review.optString("username"))
+                ))
+            }
+        }
+
+        // Parse business information (new API 2.0 structure)
+        val businessObj = poi.optJSONObject("business")
+        Log.d(TAG, "Business object: ${businessObj?.toString()}")
+        
+        // Parse rating from business object first, then fallback to root level
+        val rating = businessObj?.optString("rating")?.takeIf { it.isNotBlank() }
+            ?: poi.optString("rating").takeIf { it.isNotBlank() }
+            ?: poi.optString("star").takeIf { it.isNotBlank() }
+        
+        // Parse cost from business object first, then fallback to root level
+        val cost = businessObj?.optString("cost")?.takeIf { it.isNotBlank() }
+            ?: poi.optString("cost").takeIf { it.isNotBlank() }
+            ?: poi.optString("price_range").takeIf { it.isNotBlank() }
+        
+        // Parse opening hours from business object (prioritize today's hours)
+        val openHoursToday = businessObj?.optString("opentime_today")?.takeIf { it.isNotBlank() }
+        val openHoursWeek = businessObj?.optString("opentime_week")?.takeIf { it.isNotBlank() }
+        val openHours = openHoursToday ?: openHoursWeek ?: poi.optString("opentime").takeIf { it.isNotBlank() }
+        
+        // Parse telephone from business object first, then fallback to root level
+        val telephone = businessObj?.optString("tel")?.takeIf { it.isNotBlank() }
+            ?: poi.optString("tel").takeIf { it.isNotBlank() }
+        
+        // Parse business area from business object first, then fallback to root level
+        val businessArea = businessObj?.optString("business_area")?.takeIf { it.isNotBlank() }
+            ?: poi.optString("business_area").takeIf { it.isNotBlank() }
+        
+        // Parse tag from business object (food POIs have special tags)
+        val businessTag = businessObj?.optString("tag")?.takeIf { it.isNotBlank() }
+        if (businessTag != null && !tags.contains(businessTag)) {
+            tags.add(businessTag)
+        }
+        
+        Log.d(TAG, "Parsed: rating=$rating, cost=$cost, phone=$telephone, openHours=$openHours, reviews=${reviews.size}")
+        Log.d(TAG, "Full POI JSON keys: ${poi.keys().asSequence().toList()}")
+        Log.d(TAG, "Business object keys: ${businessObj?.keys()?.asSequence()?.toList()}")
+        Log.d(TAG, "Final tags: $tags")
 
         return POIRichDetails(
             id = poiId,
@@ -238,7 +295,7 @@ class POIWebService(private val apiKey: String) {
             telephone = telephone,
             businessArea = businessArea,
             tags = tags,
-            reviews = null // Reviews require separate API call or different endpoint
+            reviews = if (reviews.isNotEmpty()) reviews else null
         )
     }
 
