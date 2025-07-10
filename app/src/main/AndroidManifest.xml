@@ -22,7 +22,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Amap">
+        android:theme="@style/Theme.Amap"
+        android:usesCleartextTraffic="true">
 
         <!-- ADD YOUR AMAP KEY HERE (Inside the <application> tag) -->
         <meta-data

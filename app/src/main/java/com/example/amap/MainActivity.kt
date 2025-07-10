@@ -23,12 +23,14 @@ import com.amap.api.maps.LocationSource
 import com.amap.api.maps.MapView
 import com.amap.api.maps.model.LatLng
 import com.amap.api.services.core.PoiItem
+import com.example.amap.core.Constants
 import com.example.amap.data.model.POIDisplayItem
 import com.example.amap.map.MapViewModel
 import com.example.amap.map.MapController
 import com.example.amap.search.POISearchManager
 import com.example.amap.search.SearchResultsProcessor
 import com.example.amap.ui.POIResultsAdapter
+import com.example.amap.ui.POIDetailsManager
 import com.example.amap.ui.SearchUIHandler
 import com.example.amap.util.AmapPrivacy
 import kotlinx.coroutines.flow.collectLatest
@@ -52,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var poiSearchManager: POISearchManager
     private lateinit var searchResultsProcessor: SearchResultsProcessor
     private lateinit var searchUIHandler: SearchUIHandler
+    private lateinit var poiDetailsManager: POIDetailsManager
 
     private val viewModel: MapViewModel by viewModels()
     private var mapReadyForDisplay = false
@@ -95,7 +98,13 @@ class MainActivity : AppCompatActivity() {
         
         poiAdapter = POIResultsAdapter { poiDisplayItem ->
             if (::mapController.isInitialized) {
+                // Focus on POI in map
                 focusOnPOI(poiDisplayItem.poiItem)
+                
+                // Show rich details in bottom sheet
+                if (::poiDetailsManager.isInitialized) {
+                    poiDetailsManager.showPOIDetails(poiDisplayItem)
+                }
             }
         }
         resultsRecyclerView.adapter = poiAdapter
@@ -116,6 +125,10 @@ class MainActivity : AppCompatActivity() {
             handleSearchResult(poiItems, success, message)
         }
         searchResultsProcessor = SearchResultsProcessor()
+        
+        // Initialize POI details manager for rich data display
+        poiDetailsManager = POIDetailsManager(this, lifecycleScope, Constants.ApiKeys.WEB_API_KEY)
+        
         searchUIHandler = SearchUIHandler(
             searchEditText = searchEditText,
             onSearch = { query -> performPOISearch(query) },
@@ -332,5 +345,5 @@ class MainActivity : AppCompatActivity() {
         if (::aMap.isInitialized) {
             mapView.onSaveInstanceState(outState)
         }
-    }
-}
+          }
+  }

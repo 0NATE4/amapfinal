@@ -2,6 +2,13 @@ package com.example.amap.core
 
 object Constants {
     
+    // API Keys
+    object ApiKeys {
+        // Web Service API key for HTTP requests (place/detail, place/around, etc.)
+        const val WEB_API_KEY = "5de47f40dbe4ca643860ca696f8e5d4e"
+        // Android SDK key is in AndroidManifest.xml: f7e69e105a57569fc6c5e8d5e36948d7
+    }
+    
     // Search Configuration
     object Search {
         const val DEFAULT_PAGE_SIZE = 10

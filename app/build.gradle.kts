@@ -52,6 +52,7 @@ dependencies {
     // implementation(libs.androidx.activity) <-- The new dependency replaces this one, you can remove the old one.
     implementation(libs.androidx.constraintlayout)
     implementation("com.amap.api:3dmap-location-search:latest.integration") // Amap dependency
+    implementation("com.github.bumptech.glide:glide:4.16.0") // Image loading library
     
     // Testing dependencies
     testImplementation(libs.junit)
