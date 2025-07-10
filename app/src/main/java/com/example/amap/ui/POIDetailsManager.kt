@@ -68,7 +68,6 @@ class POIDetailsManager(
         view.findViewById<View>(R.id.contactContainer).visibility = View.GONE
         view.findViewById<View>(R.id.tagsLabel).visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.tagsRecyclerView).visibility = View.GONE
-        view.findViewById<View>(R.id.photosLabel).visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.photosRecyclerView).visibility = View.GONE
     }
     
@@ -175,7 +174,6 @@ class POIDetailsManager(
         
         // Show photos if available
         if (richDetails.photos.isNotEmpty()) {
-            view.findViewById<View>(R.id.photosLabel).visibility = View.VISIBLE
             val photosRecyclerView = view.findViewById<RecyclerView>(R.id.photosRecyclerView)
             photosRecyclerView.visibility = View.VISIBLE
             photosRecyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)

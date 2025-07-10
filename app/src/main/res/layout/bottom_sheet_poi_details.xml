@@ -148,21 +148,11 @@
             android:visibility="gone" />
 
         <!-- Photos Section -->
-        <TextView
-            android:id="@+id/photosLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Photos"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#212121"
-            android:layout_marginBottom="8dp"
-            android:visibility="gone" />
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/photosRecyclerView"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp"
             android:visibility="gone" />
 

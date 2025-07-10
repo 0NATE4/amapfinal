@@ -29,7 +29,7 @@ class PhotosAdapter(private val photos: List<POIPhoto>) : RecyclerView.Adapter<P
         private val photoTitle: TextView = itemView.findViewById(R.id.photoTitle)
 
         fun bind(photo: POIPhoto) {
-            photoTitle.text = photo.title?.ifEmpty { "Photo" } ?: "Photo"
+            // Title is hidden in the layout, no need to set it
             
             // Load actual image from URL using Glide
             Glide.with(itemView.context)
