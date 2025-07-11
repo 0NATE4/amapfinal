@@ -106,6 +106,9 @@ class MainActivity : AppCompatActivity() {
         
         poiAdapter = POIResultsAdapter { poiDisplayItem ->
             if (::mapController.isInitialized) {
+                // Hide search results list to show map clearly
+                hideResultsWithAnimation()
+                
                 // Focus on POI in map
                 focusOnPOI(poiDisplayItem.poiItem)
                 

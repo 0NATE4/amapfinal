@@ -39,10 +39,13 @@ class POIDetailsManager(
     fun showPOIDetails(poiDisplayItem: POIDisplayItem) {
         Log.d(TAG, "Showing details for POI: ${poiDisplayItem.title}")
         
-        // Create bottom sheet dialog
+        // Create bottom sheet dialog with transparent background
         val bottomSheet = BottomSheetDialog(context)
         val view = LayoutInflater.from(context).inflate(R.layout.bottom_sheet_poi_details, null)
         bottomSheet.setContentView(view)
+        
+        // Make background transparent so map stays visible
+        bottomSheet.window?.setDimAmount(0.0f)
         
         // Set basic info immediately
         populateBasicInfo(view, poiDisplayItem)
