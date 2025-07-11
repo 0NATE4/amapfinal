@@ -18,7 +18,7 @@ import com.example.amap.R
 import com.example.amap.data.model.POIDisplayItem
 import com.example.amap.data.model.POIRichDetails
 import com.example.amap.search.POIWebService
-import com.example.amap.ui.ReviewsAdapter
+
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
 
@@ -77,15 +77,11 @@ class POIDetailsManager(
     }
     
     private fun showLoadingState(view: View) {
-        view.findViewById<View>(R.id.loadingContainer).visibility = View.VISIBLE
-        view.findViewById<View>(R.id.errorMessage).visibility = View.GONE
+        // Hide all info sections while loading
         view.findViewById<View>(R.id.infoHours).visibility = View.GONE
         view.findViewById<View>(R.id.infoRating).visibility = View.GONE
         view.findViewById<View>(R.id.infoCost).visibility = View.GONE
-        view.findViewById<View>(R.id.contactContainer).visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.photosRecyclerView).visibility = View.GONE
-        view.findViewById<View>(R.id.reviewsLabel).visibility = View.GONE
-        view.findViewById<RecyclerView>(R.id.reviewsRecyclerView).visibility = View.GONE
     }
     
     private fun fetchRichDetails(view: View, poiDisplayItem: POIDisplayItem) {
@@ -127,9 +123,6 @@ class POIDetailsManager(
     }
     
     private fun populateRichDetails(view: View, richDetails: POIRichDetails) {
-        // Hide loading
-        view.findViewById<View>(R.id.loadingContainer).visibility = View.GONE
-        
         // Show hours if available
         richDetails.openHours?.let { hours ->
             val hoursContainer = view.findViewById<View>(R.id.infoHours)
@@ -154,13 +147,7 @@ class POIDetailsManager(
             costContainer.visibility = View.VISIBLE
         }
         
-        // Show phone number if available
-        richDetails.telephone?.let { phone ->
-            val contactContainer = view.findViewById<View>(R.id.contactContainer)
-            val phoneText = view.findViewById<TextView>(R.id.detailPhone)
-            phoneText.text = phone
-            contactContainer.visibility = View.VISIBLE
-        }
+        // Phone number removed - will be handled by Call button instead
         
         // Show photos if available
         if (richDetails.photos.isNotEmpty()) {
@@ -170,16 +157,7 @@ class POIDetailsManager(
             photosRecyclerView.adapter = PhotosAdapter(richDetails.photos)
         }
         
-        // Show reviews if available
-        richDetails.reviews?.let { reviewsList ->
-            if (reviewsList.isNotEmpty()) {
-                view.findViewById<View>(R.id.reviewsLabel).visibility = View.VISIBLE
-                val reviewsRecyclerView = view.findViewById<RecyclerView>(R.id.reviewsRecyclerView)
-                reviewsRecyclerView.visibility = View.VISIBLE
-                reviewsRecyclerView.layoutManager = LinearLayoutManager(context)
-                reviewsRecyclerView.adapter = ReviewsAdapter(reviewsList)
-            }
-        }
+        // Reviews section completely removed - only photos will show below info cards
     }
     
     private fun formatOpeningHours(hours: String): String {
@@ -291,10 +269,9 @@ class POIDetailsManager(
     }
     
     private fun showErrorState(view: View, errorMessage: String) {
-        view.findViewById<View>(R.id.loadingContainer).visibility = View.GONE
-        val errorText = view.findViewById<TextView>(R.id.errorMessage)
-        errorText.text = errorMessage
-        errorText.visibility = View.VISIBLE
+        // Error state removed - just hide photos if loading fails
+        view.findViewById<RecyclerView>(R.id.photosRecyclerView).visibility = View.GONE
+        Log.e(TAG, "Error loading POI details: $errorMessage")
     }
     
     private fun setupActionButtons(view: View, poiDisplayItem: POIDisplayItem) {

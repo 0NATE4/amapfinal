@@ -306,97 +306,15 @@
 
         </LinearLayout>
 
-        <!-- Photos Section -->
+        <!-- Photos Section (FINAL SECTION - Nothing after this!) -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/photosRecyclerView"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:layout_marginBottom="20dp"
+            android:layout_height="140dp"
+            android:layout_marginBottom="32dp"
             android:clipToPadding="false"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
-            android:visibility="gone" />
-
-        <!-- Contact Info Section -->
-        <LinearLayout
-            android:id="@+id/contactContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="20dp"
-            android:layout_marginBottom="20dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/detailPhone"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="📞 +86-123-456-7890"
-                android:textSize="16sp"
-                android:textColor="#1a1a1a"
-                android:padding="12dp"
-                android:background="?android:attr/selectableItemBackground"
-                android:drawablePadding="12dp"
-                android:layout_marginBottom="8dp"
-                android:autoLink="phone" />
-
-        </LinearLayout>
-
-        <!-- Reviews Section -->
-        <TextView
-            android:id="@+id/reviewsLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Reviews"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#1a1a1a"
-            android:paddingHorizontal="20dp"
-            android:layout_marginBottom="12dp"
-            android:visibility="gone" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/reviewsRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            android:paddingHorizontal="20dp"
-            android:visibility="gone"
-            android:nestedScrollingEnabled="false" />
-
-        <!-- Loading Indicator -->
-        <LinearLayout
-            android:id="@+id/loadingContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:padding="40dp">
-
-            <ProgressBar
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginEnd="12dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Loading details..."
-                android:textSize="14sp"
-                android:textColor="#757575" />
-
-        </LinearLayout>
-
-        <!-- Error Message -->
-        <TextView
-            android:id="@+id/errorMessage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Could not load details"
-            android:textSize="14sp"
-            android:textColor="#F44336"
-            android:gravity="center"
-            android:padding="20dp"
             android:visibility="gone" />
 
     </LinearLayout>

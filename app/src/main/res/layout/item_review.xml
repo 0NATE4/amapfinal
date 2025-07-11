@@ -1,51 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="#F9F9F9"
-    android:padding="12dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="#FFFFFF"
     android:layout_marginBottom="8dp">
 
-    <!-- Review Header with Rating -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="6dp">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <TextView
-            android:id="@+id/reviewRating"
-            android:layout_width="wrap_content"
+        <!-- Review Header with Rating -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="★ 4.5"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/reviewRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="★ 4.5"
+                android:textSize="14sp"
+                android:textColor="#FF9800"
+                android:textStyle="bold"
+                android:layout_marginEnd="12dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/reviewAuthor"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Anonymous User"
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="end"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Review Content -->
+        <TextView
+            android:id="@+id/reviewContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Great place with excellent service. The food was delicious and the atmosphere was perfect for a family dinner."
             android:textSize="14sp"
-            android:textColor="#FF9800"
-            android:textStyle="bold"
-            android:layout_marginEnd="8dp" />
-
-        <TextView
-            android:id="@+id/reviewAuthor"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="- Anonymous User"
-            android:textSize="12sp"
-            android:textColor="#757575"
-            android:gravity="end" />
+            android:textColor="#424242"
+            android:lineSpacingExtra="3dp"
+            android:fontFamily="sans-serif"
+            android:maxLines="4"
+            android:ellipsize="end" />
 
     </LinearLayout>
 
-    <!-- Review Content -->
-    <TextView
-        android:id="@+id/reviewContent"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Great place with excellent service. The food was delicious and the atmosphere was perfect for a family dinner."
-        android:textSize="14sp"
-        android:textColor="#424242"
-        android:lineSpacingExtra="2dp"
-        android:maxLines="3"
-        android:ellipsize="end" />
-
-</LinearLayout> 
+</androidx.cardview.widget.CardView> 
