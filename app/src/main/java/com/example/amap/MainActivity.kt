@@ -7,7 +7,7 @@ import android.util.Log
 import android.widget.EditText
 import android.widget.ImageView
 import android.view.View
-import android.widget.Toast
+
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -180,10 +180,7 @@ class MainActivity : AppCompatActivity() {
         
         // Setup my location button
         myLocationButton.setOnClickListener {
-            val success = mapController.centerOnUserLocation()
-            if (!success) {
-                Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show()
-            }
+            mapController.centerOnUserLocation()
         }
         
         Log.d("MainActivity", "Map components initialized")
@@ -277,7 +274,6 @@ class MainActivity : AppCompatActivity() {
         if (!mapReadyForDisplay) {
             Log.d("MainActivity", "Showing map without location centering")
             showMapAndHideLoading()
-            Toast.makeText(this, "Could not determine location", Toast.LENGTH_LONG).show()
         }
     }
     
@@ -335,7 +331,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleAISearchResult(poiItems: List<PoiItem>?, success: Boolean, message: String, aiInfo: AIProcessedQuery?) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         
         // Show AI processing info if available
         aiInfo?.let { info ->
@@ -365,7 +360,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleSearchResult(poiItems: List<PoiItem>?, success: Boolean, message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         
         if (success && poiItems != null) {
             val userLocation = if (::mapController.isInitialized) mapController.getUserLocation() else null
@@ -383,12 +377,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun focusOnPOI(poiItem: PoiItem) {
         mapController.focusOnPOI(poiItem)
-        Toast.makeText(this, "Focused on: ${poiItem.title}", Toast.LENGTH_SHORT).show()
     }
 
     private fun handleRouteResult(success: Boolean, message: String, result: RouteController.RouteResult?) {
         Log.d("MainActivity", "Route result: success=$success, message=$message")
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         
         if (success && result != null) {
             // Route planning successful - show route overlay on map
@@ -417,10 +409,7 @@ class MainActivity : AppCompatActivity() {
             )
             
             Log.d("MainActivity", "Planning route to ${poiDisplayItem.title}")
-            Toast.makeText(this, "Planning route to ${poiDisplayItem.title}...", Toast.LENGTH_SHORT).show()
             routeController.planWalkingRoute(startPoint, endPoint)
-        } else {
-            Toast.makeText(this, "Current location not available", Toast.LENGTH_SHORT).show()
         }
     }
 
