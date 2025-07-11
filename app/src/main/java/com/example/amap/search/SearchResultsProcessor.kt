@@ -4,9 +4,9 @@ import android.location.Location
 import com.amap.api.services.core.PoiItem
 import com.example.amap.core.Constants
 import com.example.amap.data.model.POIDisplayItem
+import com.example.amap.util.PinyinUtil
 
 class SearchResultsProcessor {
-
     fun processResults(poiItems: List<PoiItem>, userLocation: Location?): List<POIDisplayItem> {
         return poiItems.map { poi ->
             val address = poi.snippet ?: poi.adName ?: "Unknown address"
@@ -24,10 +24,14 @@ class SearchResultsProcessor {
                 title = poi.title ?: "Unknown POI",
                 address = address,
                 distance = distance,
-                poiItem = poi
+                poiItem = poi,
+                englishTitle = PinyinUtil.toPinyin(poi.title ?: "Unknown POI"),
+                englishAddress = PinyinUtil.toPinyin(address)
             )
         }
     }
+
+    // Remove processResultsWithTranslations and AI translation logic
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Int {
         val dLat = Math.toRadians(lat2 - lat1)

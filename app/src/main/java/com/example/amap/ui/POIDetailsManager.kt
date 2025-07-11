@@ -21,6 +21,9 @@ import com.example.amap.search.POIWebService
 import com.example.amap.ui.ReviewsAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
+import android.widget.ImageButton
+import com.example.amap.util.PinyinUtil
+import com.example.amap.ai.DeepSeekAIService
 
 class POIDetailsManager(
     private val context: Context,
@@ -53,6 +56,8 @@ class POIDetailsManager(
         // Setup action buttons
         setupActionButtons(view, poiDisplayItem)
         
+        setupDetailsExpand(view, poiDisplayItem)
+        
         bottomSheet.show()
         currentBottomSheet = bottomSheet
         
@@ -61,12 +66,31 @@ class POIDetailsManager(
     }
     
     private fun populateBasicInfo(view: View, poiDisplayItem: POIDisplayItem) {
-        view.findViewById<TextView>(R.id.detailTitle).text = poiDisplayItem.title
+        // Display title in English first, fallback to Chinese if no English translation
+        val titleDisplay = when {
+            !poiDisplayItem.englishTitle.isNullOrBlank() && poiDisplayItem.englishTitle != poiDisplayItem.title -> {
+                poiDisplayItem.englishTitle
+            }
+            else -> {
+                poiDisplayItem.title
+            }
+        }
+        view.findViewById<TextView>(R.id.detailTitle).text = titleDisplay
         
         // Create subtitle with category and address
         val poiItem = poiDisplayItem.poiItem
         val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
-        val shortAddress = poiDisplayItem.address.split(",").firstOrNull() ?: poiDisplayItem.address
+        
+        // Display address in English first, fallback to Chinese if no English translation
+        val addressDisplay = when {
+            !poiDisplayItem.englishAddress.isNullOrBlank() && poiDisplayItem.englishAddress != poiDisplayItem.address -> {
+                poiDisplayItem.englishAddress
+            }
+            else -> {
+                poiDisplayItem.address
+            }
+        }
+        val shortAddress = addressDisplay.split(",").firstOrNull() ?: addressDisplay
         view.findViewById<TextView>(R.id.detailSubtitle).text = "$category • $shortAddress"
         
         // Set distance in the info section
@@ -353,9 +377,28 @@ class POIDetailsManager(
         val lat = poiItem.latLonPoint.latitude
         val lng = poiItem.latLonPoint.longitude
         
+        // Use English text when available for sharing
+        val titleDisplay = when {
+            !poiDisplayItem.englishTitle.isNullOrBlank() && poiDisplayItem.englishTitle != poiDisplayItem.title -> {
+                poiDisplayItem.englishTitle
+            }
+            else -> {
+                poiDisplayItem.title
+            }
+        }
+        
+        val addressDisplay = when {
+            !poiDisplayItem.englishAddress.isNullOrBlank() && poiDisplayItem.englishAddress != poiDisplayItem.address -> {
+                poiDisplayItem.englishAddress
+            }
+            else -> {
+                poiDisplayItem.address
+            }
+        }
+        
         val shareText = buildString {
-            append("📍 ${poiDisplayItem.title}\n")
-            append("📍 ${poiDisplayItem.address}\n")
+            append("📍 $titleDisplay\n")
+            append("📍 $addressDisplay\n")
             append("🗺️ https://www.google.com/maps?q=$lat,$lng\n")
             append("📍 Distance: ${poiDisplayItem.distance}")
         }
@@ -363,11 +406,51 @@ class POIDetailsManager(
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, shareText)
-            putExtra(Intent.EXTRA_SUBJECT, "Location: ${poiDisplayItem.title}")
+            putExtra(Intent.EXTRA_SUBJECT, "Location: $titleDisplay")
         }
         
         val chooser = Intent.createChooser(shareIntent, "Share location")
         context.startActivity(chooser)
+    }
+    
+    private fun setupDetailsExpand(view: View, poiDisplayItem: POIDisplayItem) {
+        val btnExpand = view.findViewById<ImageButton>(R.id.btnExpandDetails)
+        val detailsContainer = view.findViewById<View>(R.id.detailsContainer)
+        val titlePinyinText = view.findViewById<TextView>(R.id.detailTitlePinyin)
+        val titleTranslationText = view.findViewById<TextView>(R.id.detailTitleTranslation)
+        val addressPinyinText = view.findViewById<TextView>(R.id.detailAddressPinyin)
+        val addressTranslationText = view.findViewById<TextView>(R.id.detailAddressTranslation)
+        val titleText = view.findViewById<TextView>(R.id.detailTitle)
+        val aiService = DeepSeekAIService()
+        var expanded = false
+        btnExpand.setOnClickListener {
+            expanded = !expanded
+            if (expanded) {
+                detailsContainer.visibility = View.VISIBLE
+                // Show pinyin instantly
+                titlePinyinText.text = PinyinUtil.toPinyin(poiDisplayItem.title)
+                addressPinyinText.text = PinyinUtil.toPinyin(poiDisplayItem.address)
+                // Show loading for translations
+                titleTranslationText.text = "Translating..."
+                addressTranslationText.text = "Translating..."
+                // Fetch AI translations
+                lifecycleScope.launch {
+                    val titleTranslation = aiService.translateToEnglish(poiDisplayItem.title)
+                    titleTranslationText.text = titleTranslation
+                }
+                lifecycleScope.launch {
+                    val addressTranslation = aiService.translateToEnglish(poiDisplayItem.address)
+                    addressTranslationText.text = addressTranslation
+                }
+                btnExpand.setImageResource(android.R.drawable.arrow_up_float)
+            } else {
+                detailsContainer.visibility = View.GONE
+                btnExpand.setImageResource(android.R.drawable.arrow_down_float)
+            }
+        }
+        // Always show Chinese name
+        titleText.text = poiDisplayItem.title
+        detailsContainer.visibility = View.GONE
     }
     
     private fun extractPOIId(poiDisplayItem: POIDisplayItem): String? {

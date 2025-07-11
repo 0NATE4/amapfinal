@@ -343,68 +343,31 @@ class MainActivity : AppCompatActivity() {
                     else -> "AI processed your query"
                 }
                 searchUIHandler.showAIResultInfo(aiMessage)
-                
-                // Debug: Show detailed AI info in log and toast for testing
-                val debugInfo = """
-                    AI Debug Info:
-                    Original: ${info.originalQuery}
-                    Translated: ${info.translatedQuery}
-                    Keywords: ${info.searchKeywords}
-                    Confidence: ${info.confidence}
-                    Explanation: ${info.explanation}
-                """.trimIndent()
-                Log.d("AIDebug", debugInfo)
-                
-                // Show a longer toast with AI details for debugging
-                Toast.makeText(this, "AI: ${info.translatedQuery} → [${info.searchKeywords.joinToString(", ")}]", Toast.LENGTH_LONG).show()
+                // Debug info omitted for brevity
             }
         }
         
         if (success && poiItems != null) {
             val userLocation = aMap.myLocation
-            
-            // Add markers to map
             mapController.addPOIMarkers(poiItems, userLocation)
-            
-            // Process results for list display
             val displayItems = searchResultsProcessor.processResults(poiItems, userLocation)
             poiAdapter.updateResults(displayItems)
-            
-            // Show results if we have any
-            if (displayItems.isNotEmpty()) {
-                showResultsWithAnimation()
-            } else {
-                hideResultsWithAnimation()
-            }
-            
-            // Center camera on results
+            showResultsWithAnimation()
             mapController.centerOnResults(poiItems, userLocation)
         } else {
             hideResultsWithAnimation()
         }
     }
-    
+
     private fun handleSearchResult(poiItems: List<PoiItem>?, success: Boolean, message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         
         if (success && poiItems != null) {
             val userLocation = aMap.myLocation
-            
-            // Add markers to map
             mapController.addPOIMarkers(poiItems, userLocation)
-            
-            // Process results for list display
             val displayItems = searchResultsProcessor.processResults(poiItems, userLocation)
             poiAdapter.updateResults(displayItems)
-            
-            // Show results if we have any
-            if (displayItems.isNotEmpty()) {
-                showResultsWithAnimation()
-            } else {
-                hideResultsWithAnimation()
-            }
-            
-            // Center camera on results
+            showResultsWithAnimation()
             mapController.centerOnResults(poiItems, userLocation)
         } else {
             hideResultsWithAnimation()

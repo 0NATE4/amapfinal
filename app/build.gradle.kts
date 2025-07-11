@@ -70,4 +70,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation("androidx.test:rules:1.5.0")
     androidTestImplementation("androidx.test:runner:1.5.2")
+    implementation("com.belerweb:pinyin4j:2.5.1") // For local pinyin conversion
+    implementation("com.huaban:jieba-analysis:1.0.2") // For Chinese word segmentation
 }

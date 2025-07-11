@@ -120,4 +120,34 @@ class SearchUIHandler(
             }, 3000)
         }
     }
+
+    /**
+     * Show translation loading indicator
+     */
+    fun showTranslationLoading() {
+        aiProcessingIndicator?.let { indicator ->
+            indicator.text = "🌐 Translating results to pinyin..."
+            indicator.visibility = android.view.View.VISIBLE
+            searchContainer?.let { container ->
+                container.alpha = 0.8f
+                container.animate()
+                    .alpha(1f)
+                    .setDuration(1000)
+                    .start()
+            }
+        }
+    }
+
+    /**
+     * Hide translation loading indicator
+     */
+    fun hideTranslationLoading() {
+        aiProcessingIndicator?.let { indicator ->
+            indicator.visibility = android.view.View.GONE
+            searchContainer?.let { container ->
+                container.animate().cancel()
+                container.alpha = 1f
+            }
+        }
+    }
 } 

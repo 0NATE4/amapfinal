@@ -183,7 +183,7 @@ class DeepSeekAIService {
         """.trimIndent()
     }
     
-    private suspend fun callDeepSeekAPI(prompt: String): String {
+    suspend fun callDeepSeekAPI(prompt: String): String {
         val requestBody = JSONObject().apply {
             put("model", "deepseek-chat")
             put("messages", JSONArray().apply {
@@ -260,6 +260,24 @@ class DeepSeekAIService {
             Log.e("DeepSeekAI", "Error parsing AI response: ${e.message}", e)
             Log.e("DeepSeekAI", "Response that failed to parse: $response")
             throw e
+        }
+    }
+
+    /**
+     * Translate a single phrase (e.g., address) to English using AI
+     */
+    suspend fun translateToEnglish(text: String): String = withContext(Dispatchers.IO) {
+        try {
+            val prompt = "Translate the following Chinese address to natural English. Only provide the English translation, nothing else:\n\n$text"
+            val response = callDeepSeekAPI(prompt)
+            val jsonResponse = org.json.JSONObject(response)
+            val choices = jsonResponse.getJSONArray("choices")
+            val firstChoice = choices.getJSONObject(0)
+            val message = firstChoice.getJSONObject("message")
+            val content = message.getString("content")
+            content.trim()
+        } catch (e: Exception) {
+            text // Fallback to original if translation fails
         }
     }
 }
