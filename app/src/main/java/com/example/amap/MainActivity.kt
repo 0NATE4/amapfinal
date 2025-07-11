@@ -8,6 +8,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.view.View
 import android.widget.Toast
+import android.widget.TextView
 import androidx.cardview.widget.CardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -29,6 +30,8 @@ import com.example.amap.map.MapViewModel
 import com.example.amap.map.MapController
 import com.example.amap.search.POISearchManager
 import com.example.amap.search.SearchResultsProcessor
+import com.example.amap.search.AIEnhancedSearchManager
+import com.example.amap.ai.AIProcessedQuery
 import com.example.amap.ui.POIResultsAdapter
 import com.example.amap.ui.POIDetailsManager
 import com.example.amap.ui.SearchUIHandler
@@ -47,11 +50,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var myLocationButton: FloatingActionButton
     private lateinit var resultsRecyclerView: RecyclerView
     private lateinit var loadingOverlay: View
+    private lateinit var aiProcessingIndicator: TextView
     private lateinit var poiAdapter: POIResultsAdapter
     
     // Components
     private lateinit var mapController: MapController
     private lateinit var poiSearchManager: POISearchManager
+    private lateinit var aiSearchManager: AIEnhancedSearchManager
     private lateinit var searchResultsProcessor: SearchResultsProcessor
     private lateinit var searchUIHandler: SearchUIHandler
     private lateinit var poiDetailsManager: POIDetailsManager
@@ -87,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         myLocationButton = findViewById(R.id.myLocationButton)
         resultsRecyclerView = findViewById(R.id.resultsRecyclerView)
         loadingOverlay = findViewById(R.id.loadingOverlay)
+        aiProcessingIndicator = findViewById(R.id.aiProcessingIndicator)
         
         mapView = findViewById(R.id.map)
         // Don't create map yet - wait until we're ready to show it
@@ -124,6 +130,22 @@ class MainActivity : AppCompatActivity() {
         poiSearchManager = POISearchManager(this) { poiItems, success, message ->
             handleSearchResult(poiItems, success, message)
         }
+        
+        // Initialize AI-enhanced search manager
+        aiSearchManager = AIEnhancedSearchManager(
+            context = this,
+            onSearchResult = { poiItems, success, message, aiInfo ->
+                handleAISearchResult(poiItems, success, message, aiInfo)
+            },
+            onAIProcessing = { isProcessing ->
+                if (isProcessing) {
+                    searchUIHandler.showAIProcessing()
+                } else {
+                    searchUIHandler.hideAIProcessing()
+                }
+            }
+        )
+        
         searchResultsProcessor = SearchResultsProcessor()
         
         // Initialize POI details manager for rich data display
@@ -131,10 +153,12 @@ class MainActivity : AppCompatActivity() {
         
         searchUIHandler = SearchUIHandler(
             searchEditText = searchEditText,
-            onSearch = { query -> performPOISearch(query) },
+            onSearch = { query -> performAISearch(query) },
             onTextChanged = { text -> 
                 clearButton.visibility = if (text.isNotEmpty()) View.VISIBLE else View.GONE
-            }
+            },
+            aiProcessingIndicator = aiProcessingIndicator,
+            searchContainer = searchContainer
         )
         
         searchUIHandler.setupSearchListeners()
@@ -248,6 +272,16 @@ class MainActivity : AppCompatActivity() {
         Log.d("MainActivity", "Map is now visible")
     }
 
+    private fun performAISearch(keyword: String) {
+        if (::mapController.isInitialized) {
+            mapController.clearPOIMarkers()
+        }
+        poiAdapter.clearResults()
+        
+        val userLocation = aMap.myLocation
+        aiSearchManager.performAISearch(keyword, userLocation)
+    }
+    
     private fun performPOISearch(keyword: String) {
         if (::mapController.isInitialized) {
             mapController.clearPOIMarkers()
@@ -283,6 +317,59 @@ class MainActivity : AppCompatActivity() {
             .setDuration(300)
     }
 
+    private fun handleAISearchResult(poiItems: List<PoiItem>?, success: Boolean, message: String, aiInfo: AIProcessedQuery?) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        
+        // Show AI processing info if available
+        aiInfo?.let { info ->
+            if (!info.isFallback) {
+                val aiMessage = when {
+                    info.searchKeywords.size > 1 -> "AI found ${info.searchKeywords.size} related keywords"
+                    info.translatedQuery != info.originalQuery -> "AI translated: ${info.translatedQuery}"
+                    else -> "AI processed your query"
+                }
+                searchUIHandler.showAIResultInfo(aiMessage)
+                
+                // Debug: Show detailed AI info in log and toast for testing
+                val debugInfo = """
+                    AI Debug Info:
+                    Original: ${info.originalQuery}
+                    Translated: ${info.translatedQuery}
+                    Keywords: ${info.searchKeywords}
+                    Confidence: ${info.confidence}
+                    Explanation: ${info.explanation}
+                """.trimIndent()
+                Log.d("AIDebug", debugInfo)
+                
+                // Show a longer toast with AI details for debugging
+                Toast.makeText(this, "AI: ${info.translatedQuery} → [${info.searchKeywords.joinToString(", ")}]", Toast.LENGTH_LONG).show()
+            }
+        }
+        
+        if (success && poiItems != null) {
+            val userLocation = aMap.myLocation
+            
+            // Add markers to map
+            mapController.addPOIMarkers(poiItems, userLocation)
+            
+            // Process results for list display
+            val displayItems = searchResultsProcessor.processResults(poiItems, userLocation)
+            poiAdapter.updateResults(displayItems)
+            
+            // Show results if we have any
+            if (displayItems.isNotEmpty()) {
+                showResultsWithAnimation()
+            } else {
+                hideResultsWithAnimation()
+            }
+            
+            // Center camera on results
+            mapController.centerOnResults(poiItems, userLocation)
+        } else {
+            hideResultsWithAnimation()
+        }
+    }
+    
     private fun handleSearchResult(poiItems: List<PoiItem>?, success: Boolean, message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         
@@ -334,6 +421,9 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         if (::poiSearchManager.isInitialized) {
             poiSearchManager.cleanup()
+        }
+        if (::aiSearchManager.isInitialized) {
+            aiSearchManager.cleanup()
         }
         if (::aMap.isInitialized) {
             mapView.onDestroy()

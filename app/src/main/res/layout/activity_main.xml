@@ -50,7 +50,7 @@
                 android:layout_width="0dp"
                 android:layout_height="52dp"
                 android:layout_weight="1"
-                android:hint="Search places..."
+                android:hint="Search places... (English, Chinese, or Pinyin)"
                 android:textSize="16sp"
                 android:textColor="@color/search_text"
                 android:textColorHint="@color/search_hint"
@@ -77,6 +77,24 @@
 
     </androidx.cardview.widget.CardView>
 
+    <!-- AI Processing Indicator -->
+    <TextView
+        android:id="@+id/aiProcessingIndicator"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:text="🤖 AI is processing your query..."
+        android:textSize="14sp"
+        android:textColor="@color/search_text"
+        android:gravity="center"
+        android:paddingVertical="8dp"
+        android:background="@drawable/rounded_photo_background"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/searchContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Modern floating results container -->
     <androidx.cardview.widget.CardView
         android:id="@+id/resultsContainer"
@@ -89,7 +107,7 @@
         app:cardElevation="10dp"
         app:cardBackgroundColor="@color/results_background"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/searchContainer"
+        app:layout_constraintTop_toBottomOf="@id/aiProcessingIndicator"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 

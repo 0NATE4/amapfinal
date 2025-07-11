@@ -7,11 +7,16 @@ import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.cardview.widget.CardView
 
 class SearchUIHandler(
     private val searchEditText: EditText,
     private val onSearch: (String) -> Unit,
-    private val onTextChanged: ((String) -> Unit)? = null
+    private val onTextChanged: ((String) -> Unit)? = null,
+    private val aiProcessingIndicator: TextView? = null,
+    private val searchContainer: CardView? = null
 ) {
 
     private val inputMethodManager = searchEditText.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -63,5 +68,56 @@ class SearchUIHandler(
 
     fun clearSearch() {
         searchEditText.text.clear()
+    }
+    
+    /**
+     * Show AI processing indicator
+     */
+    fun showAIProcessing() {
+        aiProcessingIndicator?.let { indicator ->
+            indicator.text = "🤖 AI is processing your query..."
+            indicator.visibility = android.view.View.VISIBLE
+            
+            // Add subtle animation to search container
+            searchContainer?.let { container ->
+                container.alpha = 0.8f
+                container.animate()
+                    .alpha(1f)
+                    .setDuration(1000)
+                    .start()
+            }
+        }
+    }
+    
+    /**
+     * Hide AI processing indicator
+     */
+    fun hideAIProcessing() {
+        aiProcessingIndicator?.let { indicator ->
+            indicator.visibility = android.view.View.GONE
+            
+            // Stop animation
+            searchContainer?.let { container ->
+                container.animate().cancel()
+                container.alpha = 1f
+            }
+        }
+    }
+    
+    /**
+     * Show AI processing result info
+     */
+    fun showAIResultInfo(info: String) {
+        aiProcessingIndicator?.let { indicator ->
+            indicator.text = "✨ $info"
+            indicator.visibility = android.view.View.VISIBLE
+            
+            // Auto-hide after 3 seconds
+            indicator.postDelayed({
+                if (indicator.visibility == android.view.View.VISIBLE) {
+                    indicator.visibility = android.view.View.GONE
+                }
+            }, 3000)
+        }
     }
 } 

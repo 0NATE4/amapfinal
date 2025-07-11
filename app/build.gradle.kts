@@ -54,6 +54,12 @@ dependencies {
     implementation("com.amap.api:3dmap-location-search:latest.integration") // Amap dependency
     implementation("com.github.bumptech.glide:glide:4.16.0") // Image loading library
     
+    // AI Integration dependencies
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+    
     // Testing dependencies
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
