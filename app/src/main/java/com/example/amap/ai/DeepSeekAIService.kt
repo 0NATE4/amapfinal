@@ -65,9 +65,12 @@ class DeepSeekAIService {
             Your task is to:
             1. If the query is in English, translate it to Chinese for AMap API
             2. If the query is in pinyin, convert it to Chinese characters
-            3. If the query is natural language (e.g., "Where can I find dumplings"), extract relevant search keywords
-            4. Provide multiple search keywords for better results
+            3. If the query is natural language, extract relevant search keywords
+            4. Generate multiple search keywords that would help find relevant places
             5. Consider the user's location context for relevant searches
+            6. For cuisine types, include both the cuisine name and common restaurant terms
+            7. For specific places, include both the exact name and related terms
+            8. Think like a local person would search for this type of place
             
             Respond in JSON format:
             {
@@ -77,11 +80,106 @@ class DeepSeekAIService {
                 "explanation": "Brief explanation of the translation/processing"
             }
             
-            Examples:
-            - "dumplings" → ["饺子", "饺子店", "中餐"]
-            - "Where can I find the underground market?" → ["地下市场", "地下商城", "购物中心"]
-            - "beijing hutong" → ["北京胡同", "胡同", "老北京"]
-            - "星巴克" → ["星巴克", "咖啡", "咖啡店"]
+            Guidelines:
+            - For restaurants: Include cuisine type + "餐厅", "店", "美食"
+            - For shopping: Include category + "商场", "店", "购物"
+            - For services: Include service type + "服务", "中心", "店"
+            - For landmarks: Include both specific name and general category
+            - Always provide 3-5 relevant keywords that would help find the place
+            
+            Examples of smart keyword generation:
+            - "korean food" → Think: What would locals search for? ["韩式料理", "韩国料理", "朝鲜族美食", "韩餐"]
+            - "coffee shop" → Think: What terms work in China? ["咖啡店", "咖啡", "星巴克", "饮品店"]
+            - "underground market" → Think: How do locals describe this? ["地下商场", "地下市场", "购物中心"]
+            - "beijing hutong" → Think: Specific + general terms ["北京胡同", "胡同", "老北京"]
+            
+            IMPORTANT: Generate keywords that would actually work in AMap search, not just direct translations.
+        """.trimIndent()
+    }
+    
+    /**
+     * Enhanced search with learning capability - can provide context about successful searches
+     */
+    suspend fun processSearchQueryWithContext(
+        userQuery: String,
+        userLocation: Location?,
+        successfulKeywords: List<String>? = null
+    ): AIProcessedQuery = withContext(Dispatchers.IO) {
+        try {
+            val prompt = buildPromptWithContext(userQuery, userLocation, successfulKeywords)
+            val response = callDeepSeekAPI(prompt)
+            parseAIResponse(response, userQuery)
+        } catch (e: Exception) {
+            Log.e("DeepSeekAI", "Error processing query: ${e.message}", e)
+            // Fallback to original query if AI fails
+            AIProcessedQuery(
+                originalQuery = userQuery,
+                translatedQuery = userQuery,
+                searchKeywords = listOf(userQuery),
+                confidence = 0.0,
+                isFallback = true
+            )
+        }
+    }
+    
+    private fun buildPromptWithContext(userQuery: String, userLocation: Location?, successfulKeywords: List<String>?): String {
+        val locationContext = if (userLocation != null) {
+            "User is located at: ${userLocation.latitude}, ${userLocation.longitude}. "
+        } else {
+            "User location is not available. "
+        }
+        
+        val learningContext = if (successfulKeywords != null && successfulKeywords.isNotEmpty()) {
+            """
+            
+            Learning Context: Previously successful keywords for similar queries:
+            ${successfulKeywords.joinToString(", ")}
+            Use this information to improve keyword generation.
+            """.trimIndent()
+        } else {
+            ""
+        }
+        
+        return """
+            You are an AI assistant helping foreigners in China find locations using AMap (高德地图).
+            
+            $locationContext
+            
+            User query: "$userQuery"$learningContext
+            
+            Your task is to:
+            1. If the query is in English, translate it to Chinese for AMap API
+            2. If the query is in pinyin, convert it to Chinese characters
+            3. If the query is natural language, extract relevant search keywords
+            4. Generate multiple search keywords that would help find relevant places
+            5. Consider the user's location context for relevant searches
+            6. For cuisine types, include both the cuisine name and common restaurant terms
+            7. For specific places, include both the exact name and related terms
+            8. Think like a local person would search for this type of place
+            9. If learning context is provided, use it to improve keyword selection
+            
+            Respond in JSON format:
+            {
+                "translated_query": "Chinese translation or original if already Chinese",
+                "search_keywords": ["keyword1", "keyword2", "keyword3"],
+                "confidence": 0.95,
+                "explanation": "Brief explanation of the translation/processing"
+            }
+            
+            Guidelines:
+            - For restaurants: Include cuisine type + "餐厅", "店", "美食"
+            - For shopping: Include category + "商场", "店", "购物"
+            - For services: Include service type + "服务", "中心", "店"
+            - For landmarks: Include both specific name and general category
+            - Always provide 3-5 relevant keywords that would help find the place
+            
+            Examples of smart keyword generation:
+            - "korean food" → Think: What would locals search for? ["韩式料理", "韩国料理", "朝鲜族美食", "韩餐"]
+            - "coffee shop" → Think: What terms work in China? ["咖啡店", "咖啡", "星巴克", "饮品店"]
+            - "underground market" → Think: How do locals describe this? ["地下商场", "地下市场", "购物中心"]
+            - "beijing hutong" → Think: Specific + general terms ["北京胡同", "胡同", "老北京"]
+            
+            IMPORTANT: Generate keywords that would actually work in AMap search, not just direct translations.
         """.trimIndent()
     }
     

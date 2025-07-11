@@ -15,8 +15,8 @@ object Constants {
     
     // Search Configuration
     object Search {
-        const val DEFAULT_PAGE_SIZE = 10
-        const val DEFAULT_SEARCH_RADIUS = 1000 // meters
+        const val DEFAULT_PAGE_SIZE = 6
+        const val DEFAULT_SEARCH_RADIUS = 15000 // meters
     }
     
     // AI Configuration

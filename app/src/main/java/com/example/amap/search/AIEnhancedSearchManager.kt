@@ -74,8 +74,8 @@ class AIEnhancedSearchManager(
             val allResults = mutableListOf<PoiItem>()
             var successCount = 0
             
-            // Search with each keyword
-            for (keyword in aiQuery.searchKeywords.take(3)) { // Limit to top 3 keywords
+            // Search with each keyword (AI already provides them in good order)
+            for (keyword in aiQuery.searchKeywords.take(5)) { // Search with top 5 keywords
                 Log.d("AISearch", "Searching with keyword: '$keyword'")
                 val results = performSingleKeywordSearch(keyword, userLocation)
                 Log.d("AISearch", "Found ${results.size} results for keyword '$keyword'")
@@ -91,11 +91,31 @@ class AIEnhancedSearchManager(
             val uniqueResults = allResults.distinctBy { it.poiId }
             Log.d("AISearch", "Unique results after deduplication: ${uniqueResults.size}")
             
-            // Sort by relevance (you could implement more sophisticated ranking)
+            // Sort by relevance using intelligent ranking
             val sortedResults = uniqueResults.sortedBy { poi ->
-                // Simple ranking: prefer results that match the primary keyword
-                val primaryKeyword = aiQuery.searchKeywords.firstOrNull() ?: ""
-                if (poi.title?.contains(primaryKeyword, ignoreCase = true) == true) 0 else 1
+                val poiTitle = poi.title ?: ""
+                val poiSnippet = poi.snippet ?: ""
+                val fullText = "$poiTitle $poiSnippet"
+                
+                // Calculate relevance score
+                var score = 0
+                
+                // Exact matches get highest priority
+                aiQuery.searchKeywords.forEachIndexed { index, keyword ->
+                    if (fullText.contains(keyword, ignoreCase = true)) {
+                        score += (10 - index) // Earlier keywords get higher scores
+                    }
+                }
+                
+                // Title matches get bonus points
+                aiQuery.searchKeywords.forEachIndexed { index, keyword ->
+                    if (poiTitle.contains(keyword, ignoreCase = true)) {
+                        score += (5 - index)
+                    }
+                }
+                
+                // Reverse score so lower numbers = higher priority
+                -score
             }
             
             val message = if (successCount > 0) {
