@@ -67,39 +67,30 @@
                 android:visibility="gone">
 
                 <TextView
-                    android:id="@+id/detailTitlePinyin"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Name Pinyin"
-                    android:textSize="15sp"
-                    android:textColor="#1976D2"
-                    android:layout_marginBottom="4dp" />
-
-                <TextView
                     android:id="@+id/detailTitleTranslation"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Name Translation"
-                    android:textSize="15sp"
+                    android:text="English Business Name"
+                    android:textSize="16sp"
                     android:textColor="#388E3C"
+                    android:textStyle="bold"
                     android:layout_marginBottom="8dp" />
 
                 <TextView
-                    android:id="@+id/detailAddressPinyin"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Address Pinyin"
-                    android:textSize="15sp"
-                    android:textColor="#1976D2"
+                    android:text="Original Chinese Address:"
+                    android:textSize="13sp"
+                    android:textColor="#666666"
                     android:layout_marginBottom="4dp" />
 
                 <TextView
-                    android:id="@+id/detailAddressTranslation"
+                    android:id="@+id/detailAddress"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Address Translation"
+                    android:text="Chinese Address"
                     android:textSize="15sp"
-                    android:textColor="#388E3C"
+                    android:textColor="#1a1a1a"
                     android:layout_marginBottom="4dp" />
             </LinearLayout>
 

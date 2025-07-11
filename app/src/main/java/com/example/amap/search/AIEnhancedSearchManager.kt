@@ -18,6 +18,7 @@ class AIEnhancedSearchManager(
 ) {
     
     private val aiService = DeepSeekAIService()
+    private val searchResultsProcessor = SearchResultsProcessor()
     private val poiSearchManager = POISearchManager(context) { poiItems, success, message ->
         // This will be called after AI processing and POI search
         onSearchResult(poiItems, success, message, null)
@@ -50,9 +51,7 @@ class AIEnhancedSearchManager(
                 Log.d("AISearch", "AI processed query: $aiProcessedQuery")
                 Log.d("AISearch", "Search keywords: ${aiProcessedQuery.searchKeywords}")
                 
-                // Perform search with the best keyword
-                val primaryKeyword = aiProcessedQuery.searchKeywords.firstOrNull() ?: userQuery
-                Log.d("AISearch", "Using primary keyword: $primaryKeyword")
+                // Perform search with multiple keywords for better results
                 performMultiKeywordSearch(aiProcessedQuery, userLocation)
                 
             } catch (e: Exception) {
@@ -127,12 +126,13 @@ class AIEnhancedSearchManager(
             Log.d("AISearch", "Final message: $message")
             Log.d("AISearch", "Final result count: ${sortedResults.size}")
             
-            onSearchResult(
-                sortedResults.take(20), // Limit results
-                sortedResults.isNotEmpty(),
-                message,
-                aiQuery
-            )
+            // Perform batch translation before returning results
+            if (sortedResults.isNotEmpty()) {
+                Log.d("AISearch", "Starting batch translation for ${sortedResults.size} POIs")
+                performBatchTranslationAndReturn(sortedResults.take(20), message, aiQuery)
+            } else {
+                onSearchResult(sortedResults, false, message, aiQuery)
+            }
             
         } catch (e: Exception) {
             Log.e("AISearch", "Error in multi-keyword search: ${e.message}", e)
@@ -190,11 +190,46 @@ class AIEnhancedSearchManager(
     /**
      * Fallback to direct search without AI processing
      */
-    fun performDirectSearch(query: String, userLocation: Location?) {
-        poiSearchManager.performKeywordSearch(query, userLocation)
+    fun performDirectSearch(userQuery: String, userLocation: Location?) {
+        poiSearchManager.performKeywordSearch(userQuery, userLocation)
+    }
+    
+    /**
+     * Perform batch translation and return results
+     */
+    private suspend fun performBatchTranslationAndReturn(
+        poiItems: List<PoiItem>, 
+        message: String, 
+        aiQuery: AIProcessedQuery
+    ) {
+        try {
+            Log.d("AISearch", "Processing ${poiItems.size} POIs for batch translation")
+            
+            // Use the search results processor to get basic display items first
+            val basicDisplayItems = withContext(Dispatchers.Main) {
+                searchResultsProcessor.processResults(poiItems, null) // We'll calculate distance later
+            }
+            
+            // Perform batch translation
+            val translatedDisplayItems = searchResultsProcessor.processResultsWithBatchTranslation(poiItems, null)
+            
+            // Cache the translations in the search results processor for quick lookup
+            searchResultsProcessor.cacheTranslations(translatedDisplayItems)
+            
+            Log.d("AISearch", "Batch translation completed successfully")
+            
+            // Return the original PoiItems - the SearchResultsProcessor will now use cached translations
+            onSearchResult(poiItems, true, "$message (with AI translations)", aiQuery)
+            
+        } catch (e: Exception) {
+            Log.e("AISearch", "Error in batch translation: ${e.message}", e)
+            // Fallback to original results without translation
+            onSearchResult(poiItems, true, message, aiQuery)
+        }
     }
     
     fun cleanup() {
-        poiSearchManager.cleanup()
+        // Clean up resources
+        searchResultsProcessor.clearTranslationCache()
     }
 } 

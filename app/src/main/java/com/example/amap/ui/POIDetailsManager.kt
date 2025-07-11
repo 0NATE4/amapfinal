@@ -22,8 +22,6 @@ import com.example.amap.search.POIWebService
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
 import android.widget.ImageButton
-import com.example.amap.util.PinyinUtil
-import com.example.amap.ai.DeepSeekAIService
 
 class POIDetailsManager(
     private val context: Context,
@@ -84,15 +82,8 @@ class POIDetailsManager(
         val poiItem = poiDisplayItem.poiItem
         val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
         
-        // Display address in English first, fallback to Chinese if no English translation
-        val addressDisplay = when {
-            !poiDisplayItem.englishAddress.isNullOrBlank() && poiDisplayItem.englishAddress != poiDisplayItem.address -> {
-                poiDisplayItem.englishAddress
-            }
-            else -> {
-                poiDisplayItem.address
-            }
-        }
+        // Use original Chinese address
+        val addressDisplay = poiDisplayItem.address
         val shortAddress = addressDisplay.split(",").firstOrNull() ?: addressDisplay
         view.findViewById<TextView>(R.id.detailSubtitle).text = "$category • $shortAddress"
         
@@ -367,14 +358,8 @@ class POIDetailsManager(
             }
         }
         
-        val addressDisplay = when {
-            !poiDisplayItem.englishAddress.isNullOrBlank() && poiDisplayItem.englishAddress != poiDisplayItem.address -> {
-                poiDisplayItem.englishAddress
-            }
-            else -> {
-                poiDisplayItem.address
-            }
-        }
+        // Use original Chinese address for sharing
+        val addressDisplay = poiDisplayItem.address
         
         val shareText = buildString {
             append("📍 $titleDisplay\n")
@@ -396,32 +381,17 @@ class POIDetailsManager(
     private fun setupDetailsExpand(view: View, poiDisplayItem: POIDisplayItem) {
         val btnExpand = view.findViewById<ImageButton>(R.id.btnExpandDetails)
         val detailsContainer = view.findViewById<View>(R.id.detailsContainer)
-        val titlePinyinText = view.findViewById<TextView>(R.id.detailTitlePinyin)
         val titleTranslationText = view.findViewById<TextView>(R.id.detailTitleTranslation)
-        val addressPinyinText = view.findViewById<TextView>(R.id.detailAddressPinyin)
-        val addressTranslationText = view.findViewById<TextView>(R.id.detailAddressTranslation)
-        val titleText = view.findViewById<TextView>(R.id.detailTitle)
-        val aiService = DeepSeekAIService()
+        val addressText = view.findViewById<TextView>(R.id.detailAddress)
         var expanded = false
         btnExpand.setOnClickListener {
             expanded = !expanded
             if (expanded) {
                 detailsContainer.visibility = View.VISIBLE
-                // Show pinyin instantly
-                titlePinyinText.text = PinyinUtil.toPinyin(poiDisplayItem.title)
-                addressPinyinText.text = PinyinUtil.toPinyin(poiDisplayItem.address)
-                // Show loading for translations
-                titleTranslationText.text = "Translating..."
-                addressTranslationText.text = "Translating..."
-                // Fetch AI translations
-                lifecycleScope.launch {
-                    val titleTranslation = aiService.translateToEnglish(poiDisplayItem.title)
-                    titleTranslationText.text = titleTranslation
-                }
-                lifecycleScope.launch {
-                    val addressTranslation = aiService.translateToEnglish(poiDisplayItem.address)
-                    addressTranslationText.text = addressTranslation
-                }
+                // Show English business name translation
+                titleTranslationText.text = poiDisplayItem.englishTitle ?: "Business name"
+                // Show original Chinese address
+                addressText.text = poiDisplayItem.address
                 btnExpand.setImageResource(android.R.drawable.arrow_up_float)
             } else {
                 detailsContainer.visibility = View.GONE
@@ -429,7 +399,7 @@ class POIDetailsManager(
             }
         }
         // Always show Chinese name
-        titleText.text = poiDisplayItem.title
+        view.findViewById<TextView>(R.id.detailTitle).text = poiDisplayItem.title
         detailsContainer.visibility = View.GONE
     }
     

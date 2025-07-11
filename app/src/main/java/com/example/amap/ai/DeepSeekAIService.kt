@@ -183,9 +183,11 @@ class DeepSeekAIService {
         """.trimIndent()
     }
     
-    suspend fun callDeepSeekAPI(prompt: String): String {
+    suspend fun callDeepSeekAPI(prompt: String, useLightModel: Boolean = true): String {
+        val model = if (useLightModel) "deepseek-v2-light" else "deepseek-chat"
+        
         val requestBody = JSONObject().apply {
-            put("model", "deepseek-chat")
+            put("model", model)
             put("messages", JSONArray().apply {
                 put(JSONObject().apply {
                     put("role", "user")
@@ -196,7 +198,7 @@ class DeepSeekAIService {
             put("temperature", Constants.AI.TEMPERATURE)
         }.toString()
         
-        Log.d("DeepSeekAI", "Sending request to DeepSeek API...")
+        Log.d("DeepSeekAI", "Sending request to DeepSeek API with model: $model")
         Log.d("DeepSeekAI", "Request body: $requestBody")
         
         val request = Request.Builder()
@@ -269,7 +271,7 @@ class DeepSeekAIService {
     suspend fun translateToEnglish(text: String): String = withContext(Dispatchers.IO) {
         try {
             val prompt = "Translate the following Chinese address to natural English. Only provide the English translation, nothing else:\n\n$text"
-            val response = callDeepSeekAPI(prompt)
+            val response = callDeepSeekAPI(prompt) // Uses light model by default
             val jsonResponse = org.json.JSONObject(response)
             val choices = jsonResponse.getJSONArray("choices")
             val firstChoice = choices.getJSONObject(0)
@@ -278,6 +280,110 @@ class DeepSeekAIService {
             content.trim()
         } catch (e: Exception) {
             text // Fallback to original if translation fails
+        }
+    }
+
+    /**
+     * Batch translate multiple POI items in a single API call for efficiency
+     */
+    suspend fun batchTranslatePOIs(poiData: List<POITranslationItem>): List<POITranslationResult> = withContext(Dispatchers.IO) {
+        try {
+            if (poiData.isEmpty()) return@withContext emptyList()
+            
+            val prompt = buildBatchTranslationPrompt(poiData)
+            val response = callDeepSeekAPI(prompt) // Uses light model by default
+            parseBatchTranslationResponse(response, poiData)
+        } catch (e: Exception) {
+            Log.e("DeepSeekAI", "Error in batch translation: ${e.message}", e)
+            // Fallback to original text
+            poiData.map { poi ->
+                POITranslationResult(
+                    id = poi.id,
+                    translatedTitle = poi.originalTitle,
+                    isFallback = true
+                )
+            }
+        }
+    }
+    
+    private fun buildBatchTranslationPrompt(poiData: List<POITranslationItem>): String {
+        val poiList = poiData.mapIndexed { index, poi ->
+            "${index + 1}. Business Name: \"${poi.originalTitle}\""
+        }.joinToString("\n")
+        
+        return """
+            Translate the following Chinese business/POI names to proper English. 
+            Focus on accurate English business names, NOT pinyin conversions.
+            
+            Business Names:
+            $poiList
+            
+            Respond in JSON format with an array of translations:
+            {
+                "translations": [
+                    {
+                        "id": 1,
+                        "title": "Proper English business name"
+                    },
+                    {
+                        "id": 2,
+                        "title": "Proper English business name"
+                    }
+                ]
+            }
+            
+            Translation Guidelines:
+            - For international brands: Use official English names (星巴克 → Starbucks, 麦当劳 → McDonald's)
+            - For restaurant types: Translate to proper English (火锅店 → Hot Pot Restaurant, 川菜馆 → Sichuan Restaurant)
+            - For local businesses: Translate descriptively (老张面馆 → Old Zhang's Noodle House)
+            - For hotels: Include "Hotel" if appropriate (如家酒店 → Home Inn Hotel)
+            - For shopping: Use English terms (购物中心 → Shopping Center, 超市 → Supermarket)
+            - For services: Professional English names (医院 → Hospital, 银行 → Bank)
+            - Keep location markers in original (avoid translating "北京" to "Beijing" in business names)
+            - Provide exactly ${poiData.size} translations
+            - If unsure, provide a descriptive English equivalent rather than pinyin
+        """.trimIndent()
+    }
+    
+    private fun parseBatchTranslationResponse(response: String, originalData: List<POITranslationItem>): List<POITranslationResult> {
+        try {
+            Log.d("DeepSeekAI", "Parsing batch translation response...")
+            val jsonResponse = JSONObject(response)
+            val choices = jsonResponse.getJSONArray("choices")
+            val firstChoice = choices.getJSONObject(0)
+            val message = firstChoice.getJSONObject("message")
+            val content = message.getString("content")
+            
+            Log.d("DeepSeekAI", "Batch translation AI content: $content")
+            
+            val aiResponse = JSONObject(content)
+            val translations = aiResponse.getJSONArray("translations")
+            
+            val results = mutableListOf<POITranslationResult>()
+            
+            for (i in 0 until translations.length()) {
+                val translation = translations.getJSONObject(i)
+                val id = translation.getInt("id")
+                val translatedTitle = translation.getString("title")
+                
+                // Find the original data by position (id-1 since we use 1-based indexing in prompt)
+                val originalIndex = id - 1
+                if (originalIndex >= 0 && originalIndex < originalData.size) {
+                    results.add(POITranslationResult(
+                        id = originalData[originalIndex].id,
+                        translatedTitle = translatedTitle,
+                        isFallback = false
+                    ))
+                }
+            }
+            
+            Log.d("DeepSeekAI", "Successfully parsed ${results.size} batch translations")
+            return results
+            
+        } catch (e: Exception) {
+            Log.e("DeepSeekAI", "Error parsing batch translation response: ${e.message}", e)
+            Log.e("DeepSeekAI", "Response that failed to parse: $response")
+            throw e
         }
     }
 }
@@ -291,5 +397,22 @@ data class AIProcessedQuery(
     val searchKeywords: List<String>,
     val confidence: Double,
     val explanation: String = "",
+    val isFallback: Boolean = false
+)
+
+/**
+ * Data class for batch translation input - only title needed
+ */
+data class POITranslationItem(
+    val id: String, // Unique identifier for this POI
+    val originalTitle: String
+)
+
+/**
+ * Data class for batch translation result - only title translated
+ */
+data class POITranslationResult(
+    val id: String, // Matches the input POI id
+    val translatedTitle: String,
     val isFallback: Boolean = false
 ) 

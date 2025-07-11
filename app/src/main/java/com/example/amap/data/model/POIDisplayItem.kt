@@ -9,9 +9,8 @@ data class POIDisplayItem(
     val distance: String, // Distance from user location (e.g. "1.2km")
     val poiItem: PoiItem, // Keep reference to original for map interaction
     
-    // English translations for foreigners
+    // English translation for business names only (not addresses)
     val englishTitle: String? = null,
-    val englishAddress: String? = null,
     
     // Rich details from Web API (null until fetched)
     val richDetails: POIRichDetails? = null
