@@ -3,27 +3,41 @@ package com.example.amap.map
 import android.content.Context
 import android.location.Location
 import android.util.Log
+import com.amap.api.location.AMapLocation
+import com.amap.api.location.AMapLocationClient
+import com.amap.api.location.AMapLocationClientOption
+import com.amap.api.location.AMapLocationListener
 import com.amap.api.maps.AMap
 import com.amap.api.maps.CameraUpdateFactory
-import com.amap.api.maps.model.BitmapDescriptorFactory
-import com.amap.api.maps.model.LatLng
-import com.amap.api.maps.model.Marker
-import com.amap.api.maps.model.MarkerOptions
+import com.amap.api.maps.model.*
 import com.amap.api.services.core.PoiItem
 import com.example.amap.R
 import com.example.amap.RouteController
 import com.example.amap.core.Constants
 import com.example.amap.route.overlay.WalkRouteOverlay
 
-class MapController(private val aMap: AMap, private val context: Context) {
+class MapController(private val aMap: AMap, private val context: Context) : AMapLocationListener {
 
     private val poiMarkers = mutableListOf<Marker>()
     private var currentRouteOverlay: WalkRouteOverlay? = null
     private val customInfoWindowAdapter = CustomInfoWindowAdapter(context)
     
+    // User location components
+    private var locationClient: AMapLocationClient? = null
+    private var userLocationCircle: Circle? = null
+    private var userLocationOuterRing: Circle? = null
+    private var userLocationInnerDot: Circle? = null
+    private var currentUserLocation: Location? = null
+    
     init {
         // Set custom info window adapter
         aMap.setInfoWindowAdapter(customInfoWindowAdapter)
+        
+        // Setup location tracking
+        setupLocationTracking()
+        
+        // Setup zoom level change listener for scaling location circles
+        setupZoomListener()
     }
 
     fun addPOIMarkers(poiItems: List<PoiItem>, userLocation: Location?): List<Marker> {
@@ -109,23 +123,30 @@ class MapController(private val aMap: AMap, private val context: Context) {
     }
 
     fun centerOnUserLocation(): Boolean {
-        val userLocation = aMap.myLocation
-        return if (userLocation != null) {
-            val userLatLng = LatLng(userLocation.latitude, userLocation.longitude)
+        return if (currentUserLocation != null) {
+            val userLatLng = LatLng(currentUserLocation!!.latitude, currentUserLocation!!.longitude)
             aMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, Constants.Map.DEFAULT_ZOOM_LEVEL))
             true
         } else {
             false
         }
     }
+    
+    /**
+     * Get current user location
+     */
+    fun getUserLocation(): Location? {
+        return currentUserLocation
+    }
 
     fun centerOnResults(poiItems: List<PoiItem>, userLocation: Location?) {
         if (poiItems.isEmpty()) return
         
-        if (userLocation != null) {
+        val locationToUse = userLocation ?: currentUserLocation
+        if (locationToUse != null) {
             // Center between user and POIs
             aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                LatLng(userLocation.latitude, userLocation.longitude), Constants.Map.DEFAULT_ZOOM_LEVEL))
+                LatLng(locationToUse.latitude, locationToUse.longitude), Constants.Map.DEFAULT_ZOOM_LEVEL))
         } else {
             // Center on first POI
             val firstPoi = poiItems[0]
@@ -238,5 +259,162 @@ class MapController(private val aMap: AMap, private val context: Context) {
                 Math.sin(dLon / 2) * Math.sin(dLon / 2)
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
         return (Constants.Distance.EARTH_RADIUS_METERS * c).toInt()
+    }
+    
+    /**
+     * Setup location tracking with AMapLocationClient
+     */
+    private fun setupLocationTracking() {
+        try {
+            locationClient = AMapLocationClient(context)
+            val locationOption = AMapLocationClientOption().apply {
+                locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
+                isOnceLocation = false
+                interval = Constants.Map.LOCATION_UPDATE_INTERVAL.toLong()
+                isNeedAddress = false
+            }
+            
+            locationClient?.setLocationOption(locationOption)
+            locationClient?.setLocationListener(this)
+            locationClient?.startLocation()
+            
+            Log.d("MapController", "Location tracking started")
+        } catch (e: Exception) {
+            Log.e("MapController", "Failed to setup location tracking", e)
+        }
+    }
+    
+    /**
+     * AMapLocationListener implementation
+     */
+    override fun onLocationChanged(aMapLocation: AMapLocation?) {
+        aMapLocation?.let { location ->
+            if (location.errorCode == 0) {
+                // Create Android Location object for compatibility
+                val androidLocation = Location("amap").apply {
+                    latitude = location.latitude
+                    longitude = location.longitude
+                    accuracy = location.accuracy
+                }
+                
+                currentUserLocation = androidLocation
+                updateUserLocationCircles(LatLng(location.latitude, location.longitude))
+                
+                Log.d("MapController", "Location updated: ${location.latitude}, ${location.longitude}")
+            } else {
+                Log.e("MapController", "Location error: ${location.errorCode}, ${location.errorInfo}")
+            }
+        }
+    }
+    
+    /**
+     * Setup zoom level change listener
+     */
+    private fun setupZoomListener() {
+        aMap.setOnCameraChangeListener(object : AMap.OnCameraChangeListener {
+            override fun onCameraChange(cameraPosition: CameraPosition?) {
+                // Update circles in real-time during zoom gestures
+                cameraPosition?.let { 
+                    userLocationCircle?.center?.let { position ->
+                        updateUserLocationCircles(position)
+                    }
+                }
+            }
+            
+            override fun onCameraChangeFinish(cameraPosition: CameraPosition?) {
+                // Final update when zoom gesture completes
+                cameraPosition?.let { 
+                    userLocationCircle?.center?.let { position ->
+                        updateUserLocationCircles(position)
+                    }
+                }
+            }
+        })
+    }
+    
+    /**
+     * Create/update user location circles with consistent screen size
+     */
+    private fun updateUserLocationCircles(position: LatLng) {
+        // Remove old circles
+        userLocationCircle?.remove()
+        userLocationOuterRing?.remove()
+        userLocationInnerDot?.remove()
+        
+        // Calculate radius in meters to maintain consistent screen size
+        val zoomLevel = aMap.cameraPosition.zoom
+        val metersPerPixel = calculateMetersPerPixel(zoomLevel)
+        
+        // Screen sizes in pixels (optimized size)
+        val outerRadiusPixels = 16f  // Reduced size
+        val middleRadiusPixels = 14f // Thin white ring
+        val innerRadiusPixels = 12f  // Blue center
+        
+        // Convert to meters for map circles
+        val baseOuterRadius = outerRadiusPixels * metersPerPixel
+        val baseMiddleRadius = middleRadiusPixels * metersPerPixel
+        val baseInnerRadius = innerRadiusPixels * metersPerPixel
+        
+        // Outer blue ring (largest)
+        userLocationCircle = aMap.addCircle(
+            CircleOptions()
+                .center(position)
+                .radius(baseOuterRadius)
+                .fillColor(android.graphics.Color.parseColor("#331976D2")) // 20% alpha blue
+                .strokeColor(android.graphics.Color.parseColor("#1976D2"))
+                .strokeWidth(2f) // Fixed stroke width
+                .zIndex(100f)
+        )
+        
+        // White ring (middle)
+        userLocationOuterRing = aMap.addCircle(
+            CircleOptions()
+                .center(position)
+                .radius(baseMiddleRadius)
+                .fillColor(android.graphics.Color.WHITE)
+                .strokeWidth(0f)
+                .zIndex(101f)
+        )
+        
+        // Inner blue dot (center)
+        userLocationInnerDot = aMap.addCircle(
+            CircleOptions()
+                .center(position)
+                .radius(baseInnerRadius)
+                .fillColor(android.graphics.Color.parseColor("#2196F3")) // Bright blue
+                .strokeWidth(0f)
+                .zIndex(102f)
+        )
+    }
+    
+    /**
+     * Calculate meters per pixel based on zoom level for consistent screen size
+     */
+    private fun calculateMetersPerPixel(zoomLevel: Float): Double {
+        // At zoom level z, the map scale is approximately 156543.04 * cos(latitude) / (2^z) meters per pixel
+        // Using latitude = 0 for simplicity (close enough for UI purposes)
+        return 156543.04 / Math.pow(2.0, zoomLevel.toDouble())
+    }
+    
+    /**
+     * Clean up resources
+     */
+    fun cleanup() {
+        // Stop location tracking
+        locationClient?.stopLocation()
+        locationClient?.onDestroy()
+        locationClient = null
+        
+        // Remove camera listeners
+        aMap.setOnCameraChangeListener(null)
+        
+        // Remove user location circles
+        userLocationCircle?.remove()
+        userLocationOuterRing?.remove()
+        userLocationInnerDot?.remove()
+        
+        // Clear other resources
+        clearPOIMarkers()
+        clearCurrentRoute()
     }
 } 

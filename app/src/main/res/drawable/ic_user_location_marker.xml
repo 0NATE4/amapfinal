@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    
+    <!-- Shadow -->
+    <circle
+        cx="16"
+        cy="17"
+        r="14"
+        android:fillColor="#20000000" />
+    
+    <!-- Outer blue ring -->
+    <circle
+        cx="16"
+        cy="16"
+        r="13"
+        android:fillColor="#1976D2" />
+    
+    <!-- White ring -->
+    <circle
+        cx="16"
+        cy="16"
+        r="10"
+        android:fillColor="#FFFFFF" />
+    
+    <!-- Inner blue circle -->
+    <circle
+        cx="16"
+        cy="16"
+        r="6"
+        android:fillColor="#2196F3" />
+    
+</vector> 

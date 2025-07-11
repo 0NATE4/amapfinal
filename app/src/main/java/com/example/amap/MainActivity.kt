@@ -210,7 +210,7 @@ class MainActivity : AppCompatActivity() {
                         initializeMap()
                     }
                     
-                    viewModel.setupLocationStyle(aMap)
+                    viewModel.setupLocationStyle(aMap, this@MainActivity)
                     
                     // Wait for actual location before showing map
                     waitForLocationAndShowMap()
@@ -240,7 +240,7 @@ class MainActivity : AppCompatActivity() {
         
         val locationChecker = object : Runnable {
             override fun run() {
-                val location = aMap.myLocation
+                val location = if (::mapController.isInitialized) mapController.getUserLocation() else null
                 attempts++
                 
                 if (location != null) {
@@ -293,7 +293,7 @@ class MainActivity : AppCompatActivity() {
         }
         poiAdapter.clearResults()
         
-        val userLocation = aMap.myLocation
+        val userLocation = if (::mapController.isInitialized) mapController.getUserLocation() else null
         aiSearchManager.performAISearch(keyword, userLocation)
     }
     
@@ -304,7 +304,7 @@ class MainActivity : AppCompatActivity() {
         }
         poiAdapter.clearResults()
         
-        val userLocation = aMap.myLocation
+        val userLocation = if (::mapController.isInitialized) mapController.getUserLocation() else null
         poiSearchManager.performKeywordSearch(keyword, userLocation)
     }
 
@@ -364,7 +364,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         if (success && poiItems != null) {
-            val userLocation = aMap.myLocation
+            val userLocation = if (::mapController.isInitialized) mapController.getUserLocation() else null
             
             // Add markers to map
             mapController.addPOIMarkers(poiItems, userLocation)
@@ -391,7 +391,7 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         
         if (success && poiItems != null) {
-            val userLocation = aMap.myLocation
+            val userLocation = if (::mapController.isInitialized) mapController.getUserLocation() else null
             
             // Add markers to map
             mapController.addPOIMarkers(poiItems, userLocation)
@@ -434,7 +434,7 @@ class MainActivity : AppCompatActivity() {
      * Plan route from the Directions button in POI details
      */
     private fun planRouteFromDirectionsButton(poiDisplayItem: POIDisplayItem) {
-        val userLocation = aMap.myLocation
+        val userLocation = if (::mapController.isInitialized) mapController.getUserLocation() else null
         if (userLocation != null) {
             // Clear search results and POI markers - switch to route mode
             clearSearchResults()
@@ -482,6 +482,9 @@ class MainActivity : AppCompatActivity() {
         }
         if (::routeController.isInitialized) {
             routeController.cleanup()
+        }
+        if (::mapController.isInitialized) {
+            mapController.cleanup()
         }
         if (::aMap.isInitialized) {
             mapView.onDestroy()
