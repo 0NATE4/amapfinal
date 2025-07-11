@@ -33,6 +33,7 @@ import com.example.amap.ui.POIResultsAdapter
 import com.example.amap.ui.POIDetailsManager
 import com.example.amap.ui.SearchUIHandler
 import com.example.amap.util.AmapPrivacy
+import com.amap.api.services.core.LatLonPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchResultsProcessor: SearchResultsProcessor
     private lateinit var searchUIHandler: SearchUIHandler
     private lateinit var poiDetailsManager: POIDetailsManager
+    private lateinit var routeController: RouteController
 
     private val viewModel: MapViewModel by viewModels()
     private var mapReadyForDisplay = false
@@ -120,14 +122,24 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun initializeMapComponents() {
-        mapController = MapController(aMap)
+        mapController = MapController(aMap, this)
         poiSearchManager = POISearchManager(this) { poiItems, success, message ->
             handleSearchResult(poiItems, success, message)
         }
         searchResultsProcessor = SearchResultsProcessor()
         
         // Initialize POI details manager for rich data display
-        poiDetailsManager = POIDetailsManager(this, lifecycleScope, Constants.ApiKeys.WEB_API_KEY)
+        poiDetailsManager = POIDetailsManager(
+            context = this, 
+            lifecycleScope = lifecycleScope, 
+            apiKey = Constants.ApiKeys.WEB_API_KEY,
+            onDirectionsRequested = { poiDisplayItem -> planRouteFromDirectionsButton(poiDisplayItem) }
+        )
+        
+        // Initialize route controller for walking route planning
+        routeController = RouteController(this) { success, message, result ->
+            handleRouteResult(success, message, result)
+        }
         
         searchUIHandler = SearchUIHandler(
             searchEditText = searchEditText,
@@ -251,6 +263,7 @@ class MainActivity : AppCompatActivity() {
     private fun performPOISearch(keyword: String) {
         if (::mapController.isInitialized) {
             mapController.clearPOIMarkers()
+            mapController.clearCurrentRoute() // Clear any existing route
         }
         poiAdapter.clearResults()
         
@@ -261,6 +274,7 @@ class MainActivity : AppCompatActivity() {
     private fun clearSearchResults() {
         if (::mapController.isInitialized) {
             mapController.clearPOIMarkers()
+            mapController.clearCurrentRoute() // Clear any existing route
         }
         poiAdapter.clearResults()
         hideResultsWithAnimation()
@@ -315,6 +329,37 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "Focused on: ${poiItem.title}", Toast.LENGTH_SHORT).show()
     }
 
+    private fun handleRouteResult(success: Boolean, message: String, result: RouteController.RouteResult?) {
+        Log.d("MainActivity", "Route result: success=$success, message=$message")
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        
+        if (success && result != null) {
+            // Route planning successful - show route overlay on map
+            Log.d("MainActivity", "Route planning successful: ${result.routeData.distance}m, ${result.routeData.duration}s")
+            mapController.showWalkingRoute(result)
+        }
+    }
+
+    /**
+     * Plan route from the Directions button in POI details
+     */
+    private fun planRouteFromDirectionsButton(poiDisplayItem: POIDisplayItem) {
+        val userLocation = aMap.myLocation
+        if (userLocation != null) {
+            val startPoint = LatLonPoint(userLocation.latitude, userLocation.longitude)
+            val endPoint = LatLonPoint(
+                poiDisplayItem.poiItem.latLonPoint.latitude, 
+                poiDisplayItem.poiItem.latLonPoint.longitude
+            )
+            
+            Log.d("MainActivity", "Planning route to ${poiDisplayItem.title}")
+            Toast.makeText(this, "Planning route to ${poiDisplayItem.title}...", Toast.LENGTH_SHORT).show()
+            routeController.planWalkingRoute(startPoint, endPoint)
+        } else {
+            Toast.makeText(this, "Current location not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // --- The MapView lifecycle methods MUST stay in the Activity ---
     override fun onResume() {
         super.onResume()
@@ -334,6 +379,9 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         if (::poiSearchManager.isInitialized) {
             poiSearchManager.cleanup()
+        }
+        if (::routeController.isInitialized) {
+            routeController.cleanup()
         }
         if (::aMap.isInitialized) {
             mapView.onDestroy()

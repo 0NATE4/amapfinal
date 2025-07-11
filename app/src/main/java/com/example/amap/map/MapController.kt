@@ -1,5 +1,6 @@
 package com.example.amap.map
 
+import android.content.Context
 import android.location.Location
 import android.util.Log
 import com.amap.api.maps.AMap
@@ -8,11 +9,14 @@ import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Marker
 import com.amap.api.maps.model.MarkerOptions
 import com.amap.api.services.core.PoiItem
+import com.example.amap.RouteController
 import com.example.amap.core.Constants
+import com.example.amap.route.overlay.WalkRouteOverlay
 
-class MapController(private val aMap: AMap) {
+class MapController(private val aMap: AMap, private val context: Context) {
 
     private val poiMarkers = mutableListOf<Marker>()
+    private var currentRouteOverlay: WalkRouteOverlay? = null
 
     fun addPOIMarkers(poiItems: List<PoiItem>, userLocation: Location?): List<Marker> {
         val newMarkers = mutableListOf<Marker>()
@@ -91,6 +95,40 @@ class MapController(private val aMap: AMap) {
             val firstLatLng = LatLng(firstPoi.latLonPoint.latitude, firstPoi.latLonPoint.longitude)
             aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(firstLatLng, Constants.Map.SEARCH_RESULTS_ZOOM_LEVEL))
         }
+    }
+
+    /**
+     * Show a walking route overlay on the map
+     */
+    fun showWalkingRoute(routeResult: RouteController.RouteResult) {
+        // Clear any existing route
+        clearCurrentRoute()
+        
+        try {
+            // Create and display the walking route overlay
+            currentRouteOverlay = WalkRouteOverlay(
+                context = context,
+                map = aMap,
+                routeData = routeResult.routeData,
+                start = routeResult.startPoint,
+                end = routeResult.endPoint
+            )
+            
+            currentRouteOverlay?.addToMap()
+            Log.d("MapController", "Walking route overlay added to map")
+            
+        } catch (e: Exception) {
+            Log.e("MapController", "Error showing walking route", e)
+        }
+    }
+    
+    /**
+     * Clear the current route overlay from the map
+     */
+    fun clearCurrentRoute() {
+        currentRouteOverlay?.removeFromMap()
+        currentRouteOverlay = null
+        Log.d("MapController", "Route overlay cleared")
     }
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Int {
