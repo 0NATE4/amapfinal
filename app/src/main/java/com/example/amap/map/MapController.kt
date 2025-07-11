@@ -336,11 +336,6 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
      * Create/update user location circles with consistent screen size
      */
     private fun updateUserLocationCircles(position: LatLng) {
-        // Remove old circles
-        userLocationCircle?.remove()
-        userLocationOuterRing?.remove()
-        userLocationInnerDot?.remove()
-        
         // Calculate radius in meters to maintain consistent screen size
         val zoomLevel = aMap.cameraPosition.zoom
         val metersPerPixel = calculateMetersPerPixel(zoomLevel)
@@ -355,11 +350,36 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
         val baseMiddleRadius = middleRadiusPixels * metersPerPixel
         val baseInnerRadius = innerRadiusPixels * metersPerPixel
         
+        if (userLocationCircle == null || userLocationOuterRing == null || userLocationInnerDot == null) {
+            // Create circles for the first time
+            createLocationCircles(position, baseOuterRadius, baseMiddleRadius, baseInnerRadius)
+        } else {
+            // Update existing circles (no flickering)
+            userLocationCircle?.center = position
+            userLocationCircle?.radius = baseOuterRadius
+            
+            userLocationOuterRing?.center = position
+            userLocationOuterRing?.radius = baseMiddleRadius
+            
+            userLocationInnerDot?.center = position
+            userLocationInnerDot?.radius = baseInnerRadius
+        }
+    }
+    
+    /**
+     * Create location circles for the first time
+     */
+    private fun createLocationCircles(position: LatLng, outerRadius: Double, middleRadius: Double, innerRadius: Double) {
+        // Remove any existing circles first
+        userLocationCircle?.remove()
+        userLocationOuterRing?.remove()
+        userLocationInnerDot?.remove()
+        
         // Outer blue ring (largest)
         userLocationCircle = aMap.addCircle(
             CircleOptions()
                 .center(position)
-                .radius(baseOuterRadius)
+                .radius(outerRadius)
                 .fillColor(android.graphics.Color.parseColor("#331976D2")) // 20% alpha blue
                 .strokeColor(android.graphics.Color.parseColor("#1976D2"))
                 .strokeWidth(2f) // Fixed stroke width
@@ -370,7 +390,7 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
         userLocationOuterRing = aMap.addCircle(
             CircleOptions()
                 .center(position)
-                .radius(baseMiddleRadius)
+                .radius(middleRadius)
                 .fillColor(android.graphics.Color.WHITE)
                 .strokeWidth(0f)
                 .zIndex(101f)
@@ -380,7 +400,7 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
         userLocationInnerDot = aMap.addCircle(
             CircleOptions()
                 .center(position)
-                .radius(baseInnerRadius)
+                .radius(innerRadius)
                 .fillColor(android.graphics.Color.parseColor("#2196F3")) // Bright blue
                 .strokeWidth(0f)
                 .zIndex(102f)
