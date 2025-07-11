@@ -221,30 +221,48 @@ class POIWebService(private val apiKey: String) {
         }
         Log.d(TAG, "Found ${tags.size} tags: $tags")
 
-        // Parse reviews/comments
+        // Parse reviews/comments with validation
         val reviews = mutableListOf<POIReview>()
+        
+        // Try comments field first
         poi.optJSONArray("comments")?.let { commentsArray ->
             Log.d(TAG, "Found ${commentsArray.length()} comments")
             for (i in 0 until commentsArray.length()) {
                 val comment = commentsArray.getJSONObject(i)
-                reviews.add(POIReview(
-                    content = comment.optString("content", ""),
-                    rating = comment.optString("rating"),
-                    author = comment.optString("author")
-                ))
+                val content = comment.optString("content", "").trim()
+                val rating = comment.optString("rating", "").trim()
+                val author = comment.optString("author", "").trim()
+                
+                // Only add reviews with meaningful content (not just numbers or IDs)
+                if (isValidReviewContent(content) || isValidReviewContent(author)) {
+                    reviews.add(POIReview(
+                        content = if (content.isNotEmpty()) content else "Review available",
+                        rating = if (rating.isNotEmpty() && rating.matches(Regex("\\d+(\\.\\d+)?"))) rating else null,
+                        author = if (author.isNotEmpty()) author else null
+                    ))
+                }
             }
         }
         
-        // Try alternative reviews field
-        poi.optJSONArray("reviews")?.let { reviewsArray ->
-            Log.d(TAG, "Found ${reviewsArray.length()} reviews")
-            for (i in 0 until reviewsArray.length()) {
-                val review = reviewsArray.getJSONObject(i)
-                reviews.add(POIReview(
-                    content = review.optString("content", ""),
-                    rating = review.optString("star", review.optString("rating")),
-                    author = review.optString("author", review.optString("username"))
-                ))
+        // Try alternative reviews field if we don't have enough good reviews
+        if (reviews.size < 3) {
+            poi.optJSONArray("reviews")?.let { reviewsArray ->
+                Log.d(TAG, "Found ${reviewsArray.length()} reviews")
+                for (i in 0 until reviewsArray.length()) {
+                    val review = reviewsArray.getJSONObject(i)
+                    val content = review.optString("content", "").trim()
+                    val rating = review.optString("star", review.optString("rating", "")).trim()
+                    val author = review.optString("author", review.optString("username", "")).trim()
+                    
+                    // Only add reviews with meaningful content
+                    if (isValidReviewContent(content) || isValidReviewContent(author)) {
+                        reviews.add(POIReview(
+                            content = if (content.isNotEmpty()) content else "Review available",
+                            rating = if (rating.isNotEmpty() && rating.matches(Regex("\\d+(\\.\\d+)?"))) rating else null,
+                            author = if (author.isNotEmpty()) author else null
+                        ))
+                    }
+                }
             }
         }
 
@@ -295,7 +313,8 @@ class POIWebService(private val apiKey: String) {
             telephone = telephone,
             businessArea = businessArea,
             tags = tags,
-            reviews = if (reviews.isNotEmpty()) reviews else null
+            // Only include reviews if we have at least one with meaningful content
+            reviews = if (reviews.any { it.content.isNotBlank() && it.content.length > 3 }) reviews else null
         )
     }
 
@@ -313,6 +332,24 @@ class POIWebService(private val apiKey: String) {
         val distance = levenshteinDistance(cleanName1, cleanName2)
         val maxLength = maxOf(cleanName1.length, cleanName2.length)
         return if (maxLength == 0) 0.0 else 1.0 - (distance.toDouble() / maxLength)
+    }
+    
+    /**
+     * Validate review content to filter out IDs, numbers, and meaningless data
+     */
+    private fun isValidReviewContent(content: String): Boolean {
+        if (content.isBlank()) return false
+        
+        // Filter out pure numbers, IDs, and short meaningless strings
+        return when {
+            content.length < 3 -> false  // Too short
+            content.matches(Regex("\\d+")) -> false  // Pure numbers
+            content.matches(Regex("[a-zA-Z0-9]{10,}")) -> false  // Likely IDs
+            content.matches(Regex("\\d{4}-\\d{2}-\\d{2}.*")) -> false  // Dates/timestamps
+            content.contains("http") -> false  // URLs
+            content.length > 5 -> true  // Likely real content
+            else -> false
+        }
     }
     
     private fun levenshteinDistance(s1: String, s2: String): Int {

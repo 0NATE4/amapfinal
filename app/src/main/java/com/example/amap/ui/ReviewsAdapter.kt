@@ -27,20 +27,31 @@ class ReviewsAdapter(private val reviews: List<POIReview>) : RecyclerView.Adapte
         private val reviewAuthor: TextView = itemView.findViewById(R.id.reviewAuthor)
 
         fun bind(review: POIReview) {
+            // Set review content (always visible since we filtered for valid content)
             reviewContent.text = review.content
             
-            // Show rating if available
+            // Show rating if available and valid
             review.rating?.let { rating ->
-                reviewRating.text = "★ $rating"
-                reviewRating.visibility = View.VISIBLE
+                // Validate rating is actually a number
+                val numericRating = rating.toDoubleOrNull()
+                if (numericRating != null && numericRating > 0 && numericRating <= 5) {
+                    reviewRating.text = "★ $rating"
+                    reviewRating.visibility = View.VISIBLE
+                } else {
+                    reviewRating.visibility = View.GONE
+                }
             } ?: run {
                 reviewRating.visibility = View.GONE
             }
             
-            // Show author if available
+            // Show author if available and not just numbers/IDs
             review.author?.let { author ->
-                reviewAuthor.text = "- $author"
-                reviewAuthor.visibility = View.VISIBLE
+                if (author.isNotBlank() && author.length > 2 && !author.matches(Regex("\\d+"))) {
+                    reviewAuthor.text = author
+                    reviewAuthor.visibility = View.VISIBLE
+                } else {
+                    reviewAuthor.visibility = View.GONE
+                }
             } ?: run {
                 reviewAuthor.visibility = View.GONE
             }
