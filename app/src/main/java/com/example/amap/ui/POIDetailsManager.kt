@@ -25,7 +25,8 @@ import kotlinx.coroutines.launch
 class POIDetailsManager(
     private val context: Context,
     private val lifecycleScope: LifecycleCoroutineScope,
-    private val apiKey: String
+    private val apiKey: String,
+    private val onDirectionsRequested: ((POIDisplayItem) -> Unit)? = null
 ) {
     
     private val webService = POIWebService(apiKey)
@@ -318,6 +319,15 @@ class POIDetailsManager(
     }
     
     private fun openNavigation(poiDisplayItem: POIDisplayItem) {
+        // Use internal route planning if callback is provided
+        if (onDirectionsRequested != null) {
+            Log.d(TAG, "Using internal route planning for ${poiDisplayItem.title}")
+            onDirectionsRequested.invoke(poiDisplayItem)
+            currentBottomSheet?.dismiss()
+            return
+        }
+        
+        // Fallback to external navigation
         val poiItem = poiDisplayItem.poiItem
         val lat = poiItem.latLonPoint.latitude
         val lng = poiItem.latLonPoint.longitude
