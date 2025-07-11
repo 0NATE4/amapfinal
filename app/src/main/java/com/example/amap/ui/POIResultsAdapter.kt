@@ -41,18 +41,34 @@ class POIResultsAdapter(
     override fun getItemCount(): Int = poiList.size
 
     inner class POIViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val titleText: TextView = itemView.findViewById(R.id.poiTitle)
+        private val titleEnglishText: TextView = itemView.findViewById(R.id.poiTitleEnglish)
+        private val titleChineseText: TextView = itemView.findViewById(R.id.poiTitleChinese)
         private val addressText: TextView = itemView.findViewById(R.id.poiAddress)
         private val distanceText: TextView = itemView.findViewById(R.id.poiDistance)
 
         fun bind(poi: POIDisplayItem) {
             Log.d("POIAdapter", "Binding POI: ${poi.title} (English: ${poi.englishTitle})")
-            // Always display Chinese title and address in the results list
-            titleText.text = poi.title
+            
+            // Display English translation prominently (if available)
+            titleEnglishText.text = poi.englishTitle ?: poi.title
+            
+            // Display Chinese name below (only if we have English translation)
+            if (!poi.englishTitle.isNullOrBlank() && poi.englishTitle != poi.title) {
+                titleChineseText.text = poi.title
+                titleChineseText.visibility = View.VISIBLE
+            } else {
+                // If no English translation, hide Chinese subtitle to avoid duplication
+                titleChineseText.visibility = View.GONE
+            }
+            
+            // Address stays in Chinese
             addressText.text = poi.address
             distanceText.text = poi.distance
-            Log.d("POIAdapter", "Set title: '${poi.title}'")
+            
+            Log.d("POIAdapter", "Set English title: '${poi.englishTitle}'")
+            Log.d("POIAdapter", "Set Chinese title: '${poi.title}'")
             Log.d("POIAdapter", "Set address: '${poi.address}'")
+            
             itemView.setOnClickListener {
                 onItemClick(poi)
             }

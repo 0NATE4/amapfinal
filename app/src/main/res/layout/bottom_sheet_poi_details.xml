@@ -27,80 +27,42 @@
             android:paddingHorizontal="20dp"
             android:paddingBottom="16dp">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/detailTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
+                android:text="English Business Name"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="#1a1a1a"
+                android:lineSpacingExtra="2dp"
+                android:layout_marginBottom="4dp" />
 
-                <TextView
-                    android:id="@+id/detailTitle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="POI Name"
-                    android:textSize="28sp"
-                    android:textStyle="bold"
-                    android:textColor="#1a1a1a"
-                    android:lineSpacingExtra="2dp" />
-
-                <ImageButton
-                    android:id="@+id/btnExpandDetails"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@android:drawable/arrow_down_float"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Show details"
-                    android:padding="8dp"
-                    android:focusable="true"
-                    android:clickable="true" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/detailsContainer"
+            <TextView
+                android:id="@+id/detailTitleChinese"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp"
-                android:visibility="gone">
+                android:text="中文名称"
+                android:textSize="16sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="8dp" />
 
-                <TextView
-                    android:id="@+id/detailTitleTranslation"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="English Business Name"
-                    android:textSize="16sp"
-                    android:textColor="#388E3C"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Original Chinese Address:"
-                    android:textSize="13sp"
-                    android:textColor="#666666"
-                    android:layout_marginBottom="4dp" />
-
-                <TextView
-                    android:id="@+id/detailAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Chinese Address"
-                    android:textSize="15sp"
-                    android:textColor="#1a1a1a"
-                    android:layout_marginBottom="4dp" />
-            </LinearLayout>
+            <TextView
+                android:id="@+id/detailAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chinese Address"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:id="@+id/detailSubtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Category • Location"
+                android:text="Category • Distance"
                 android:textSize="14sp"
-                android:textColor="#666666"
+                android:textColor="#888888"
                 android:layout_marginBottom="8dp" />
 
         </LinearLayout>

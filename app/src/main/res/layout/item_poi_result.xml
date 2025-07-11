@@ -21,14 +21,24 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/poiTitle"
+                android:id="@+id/poiTitleEnglish"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/search_text"
                 android:fontFamily="sans-serif-medium"
-                android:text="POI Title" />
+                android:text="English Business Name" />
+
+            <TextView
+                android:id="@+id/poiTitleChinese"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="14sp"
+                android:textColor="@color/search_hint"
+                android:fontFamily="sans-serif"
+                android:text="中文名称" />
 
             <TextView
                 android:id="@+id/poiAddress"

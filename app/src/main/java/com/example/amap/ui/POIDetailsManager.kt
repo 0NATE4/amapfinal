@@ -49,15 +49,13 @@ class POIDetailsManager(
         bottomSheet.window?.setDimAmount(0.0f)
         
         // Set basic info immediately
-        populateBasicInfo(view, poiDisplayItem)
+        setupBasicInfo(view, poiDisplayItem)
         
         // Show loading state
         showLoadingState(view)
         
         // Setup action buttons
         setupActionButtons(view, poiDisplayItem)
-        
-        setupDetailsExpand(view, poiDisplayItem)
         
         bottomSheet.show()
         currentBottomSheet = bottomSheet
@@ -66,29 +64,27 @@ class POIDetailsManager(
         fetchRichDetails(view, poiDisplayItem)
     }
     
-    private fun populateBasicInfo(view: View, poiDisplayItem: POIDisplayItem) {
-        // Display title in English first, fallback to Chinese if no English translation
-        val titleDisplay = when {
-            !poiDisplayItem.englishTitle.isNullOrBlank() && poiDisplayItem.englishTitle != poiDisplayItem.title -> {
-                poiDisplayItem.englishTitle
-            }
-            else -> {
-                poiDisplayItem.title
-            }
-        }
-        view.findViewById<TextView>(R.id.detailTitle).text = titleDisplay
+    private fun setupBasicInfo(view: View, poiDisplayItem: POIDisplayItem) {
+        // Show English translation prominently, fallback to Chinese if no translation
+        val englishTitle = poiDisplayItem.englishTitle ?: poiDisplayItem.title
+        view.findViewById<TextView>(R.id.detailTitle).text = englishTitle
         
-        // Create subtitle with category and address
+        // Show Chinese name as subtitle (only if we have English translation)
+        val chineseTitleView = view.findViewById<TextView>(R.id.detailTitleChinese)
+        if (!poiDisplayItem.englishTitle.isNullOrBlank() && poiDisplayItem.englishTitle != poiDisplayItem.title) {
+            chineseTitleView.text = poiDisplayItem.title
+            chineseTitleView.visibility = View.VISIBLE
+        } else {
+            chineseTitleView.visibility = View.GONE
+        }
+        
+        // Show Chinese address
+        view.findViewById<TextView>(R.id.detailAddress).text = poiDisplayItem.address
+        
+        // Create subtitle with category and distance
         val poiItem = poiDisplayItem.poiItem
         val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
-        
-        // Use original Chinese address
-        val addressDisplay = poiDisplayItem.address
-        val shortAddress = addressDisplay.split(",").firstOrNull() ?: addressDisplay
-        view.findViewById<TextView>(R.id.detailSubtitle).text = "$category • $shortAddress"
-        
-        // Set distance in the info section
-        view.findViewById<TextView>(R.id.detailDistance).text = poiDisplayItem.distance
+        view.findViewById<TextView>(R.id.detailSubtitle).text = "$category • ${poiDisplayItem.distance}"
     }
     
     private fun showLoadingState(view: View) {
@@ -378,30 +374,7 @@ class POIDetailsManager(
         context.startActivity(chooser)
     }
     
-    private fun setupDetailsExpand(view: View, poiDisplayItem: POIDisplayItem) {
-        val btnExpand = view.findViewById<ImageButton>(R.id.btnExpandDetails)
-        val detailsContainer = view.findViewById<View>(R.id.detailsContainer)
-        val titleTranslationText = view.findViewById<TextView>(R.id.detailTitleTranslation)
-        val addressText = view.findViewById<TextView>(R.id.detailAddress)
-        var expanded = false
-        btnExpand.setOnClickListener {
-            expanded = !expanded
-            if (expanded) {
-                detailsContainer.visibility = View.VISIBLE
-                // Show English business name translation
-                titleTranslationText.text = poiDisplayItem.englishTitle ?: "Business name"
-                // Show original Chinese address
-                addressText.text = poiDisplayItem.address
-                btnExpand.setImageResource(android.R.drawable.arrow_up_float)
-            } else {
-                detailsContainer.visibility = View.GONE
-                btnExpand.setImageResource(android.R.drawable.arrow_down_float)
-            }
-        }
-        // Always show Chinese name
-        view.findViewById<TextView>(R.id.detailTitle).text = poiDisplayItem.title
-        detailsContainer.visibility = View.GONE
-    }
+
     
     private fun extractPOIId(poiDisplayItem: POIDisplayItem): String? {
         val poiItem = poiDisplayItem.poiItem
