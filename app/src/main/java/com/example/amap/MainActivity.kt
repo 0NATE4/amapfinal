@@ -476,6 +476,7 @@ class MainActivity : AppCompatActivity() {
         }
         if (::aiSearchManager.isInitialized) {
             aiSearchManager.cleanup()
+        }
         if (::routeController.isInitialized) {
             routeController.cleanup()
         }
@@ -489,5 +490,5 @@ class MainActivity : AppCompatActivity() {
         if (::aMap.isInitialized) {
             mapView.onSaveInstanceState(outState)
         }
-          }
-  }
+    }
+}
