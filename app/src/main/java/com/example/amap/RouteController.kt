@@ -101,12 +101,26 @@ class RouteController(
                     val distance = path.getInt("distance")
                     val duration = path.getInt("duration")
                     
-                    // Get first step's polyline as a simple route representation
+                    // Combine all steps' polylines for complete walking route
                     val steps = path.getJSONArray("steps")
-                    var polyline = ""
-                    if (steps.length() > 0) {
-                        polyline = steps.getJSONObject(0).getString("polyline")
+                    val allPolylines = mutableListOf<String>()
+                    
+                    Log.d("RouteController", "Processing ${steps.length()} walking steps")
+                    for (i in 0 until steps.length()) {
+                        val step = steps.getJSONObject(i)
+                        val stepPolyline = step.optString("polyline", "")
+                        val instruction = step.optString("instruction", "")
+                        val distance = step.optInt("distance", 0)
+                        
+                        Log.d("RouteController", "Step $i: $instruction (${distance}m)")
+                        
+                        if (stepPolyline.isNotEmpty()) {
+                            allPolylines.add(stepPolyline)
+                        }
                     }
+                    
+                    // Combine all polylines with semicolon separator
+                    val polyline = allPolylines.joinToString(";")
                     
                     val distanceText = if (distance >= 1000) {
                         "%.1f km".format(distance / 1000.0)

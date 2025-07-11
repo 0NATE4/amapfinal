@@ -1,6 +1,7 @@
 package com.example.amap.route.overlay
 
 import android.content.Context
+import android.util.Log
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.MarkerOptions
@@ -68,32 +69,49 @@ class WalkRouteOverlay(
 
     /**
      * Parse AMap polyline string format into LatLng points
-     * AMap polyline format: "lng1,lat1;lng2,lat2;lng3,lat3"
+     * Can handle both single polylines and multiple polylines joined by ";;"
+     * AMap polyline format: "lng1,lat1;lng2,lat2;lng3,lat3" or multiple polylines
      */
     private fun parsePolylineString(polyline: String): List<LatLng> {
         val points = mutableListOf<LatLng>()
         
         try {
             if (polyline.isNotEmpty()) {
-                val coordPairs = polyline.split(";")
-                for (pair in coordPairs) {
-                    val coords = pair.split(",")
-                    if (coords.size >= 2) {
-                        val lng = coords[0].toDoubleOrNull()
-                        val lat = coords[1].toDoubleOrNull()
-                        if (lng != null && lat != null) {
-                            points.add(LatLng(lat, lng))
+                // Handle multiple polylines from different steps (separated by ";")
+                val polylineSegments = polyline.split(";;") // In case there are double separators
+                
+                for (segment in polylineSegments) {
+                    if (segment.isNotEmpty()) {
+                        val coordPairs = segment.split(";")
+                        for (pair in coordPairs) {
+                            if (pair.isNotEmpty()) {
+                                val coords = pair.split(",")
+                                if (coords.size >= 2) {
+                                    val lng = coords[0].trim().toDoubleOrNull()
+                                    val lat = coords[1].trim().toDoubleOrNull()
+                                    if (lng != null && lat != null) {
+                                        points.add(LatLng(lat, lng))
+                                    }
+                                }
+                            }
                         }
                     }
+                }
+                
+                Log.d("WalkRouteOverlay", "Parsed ${points.size} route points from polyline")
+                if (points.size < 2) {
+                    Log.w("WalkRouteOverlay", "Warning: Very few route points parsed, route may look incomplete")
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            Log.e("WalkRouteOverlay", "Error parsing polyline: ${e.message}")
             // Fallback: just connect start and end points directly
             startPoint?.let { start ->
                 endPoint?.let { end ->
                     points.add(start)
                     points.add(end)
+                    Log.d("WalkRouteOverlay", "Using fallback direct route")
                 }
             }
         }
@@ -106,21 +124,25 @@ class WalkRouteOverlay(
      */
     private fun addIntermediateMarkers(routePoints: List<LatLng>) {
         try {
-            // Add a marker every 5 points to show route progress
-            for (i in routePoints.indices step 5) {
+            // Add markers more sparsely - every 20 points or at least every 200m
+            val stepSize = maxOf(20, routePoints.size / 5) // Ensure we don't have too many markers
+            
+            for (i in routePoints.indices step stepSize) {
                 if (i > 0 && i < routePoints.size - 1) { // Skip start and end
                     val point = routePoints[i]
                     addStationMarker(
                         MarkerOptions()
                             .position(point)
-                            .title("步行点 ${i / 5 + 1}")
-                            .snippet("继续前行")
+                            .title("Walking waypoint")
+                            .snippet("Continue ahead")
                             .visible(nodeIconVisible)
                             .anchor(0.5f, 0.5f)
                             .icon(getWalkBitmapDescriptor())
                     )
                 }
             }
+            
+            Log.d("WalkRouteOverlay", "Added ${(routePoints.size / stepSize)} intermediate markers")
         } catch (e: Exception) {
             e.printStackTrace()
         }

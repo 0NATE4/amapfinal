@@ -346,6 +346,13 @@ class MainActivity : AppCompatActivity() {
     private fun planRouteFromDirectionsButton(poiDisplayItem: POIDisplayItem) {
         val userLocation = aMap.myLocation
         if (userLocation != null) {
+            // Clear search results and POI markers - switch to route mode
+            clearSearchResults()
+            
+            // Update search bar to show route destination
+            searchEditText.setText("Directions to ${poiDisplayItem.title}")
+            clearButton.visibility = View.VISIBLE
+            
             val startPoint = LatLonPoint(userLocation.latitude, userLocation.longitude)
             val endPoint = LatLonPoint(
                 poiDisplayItem.poiItem.latLonPoint.latitude, 
