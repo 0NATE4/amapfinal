@@ -429,8 +429,7 @@ class POIDetailsManager(
                 btnExpand.setImageResource(android.R.drawable.arrow_down_float)
             }
         }
-        // Always show Chinese name
-        titleText.text = poiDisplayItem.title
+        // Don't override title - it's already set correctly in populateBasicInfo
         detailsContainer.visibility = View.GONE
     }
     
