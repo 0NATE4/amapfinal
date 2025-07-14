@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- Back square (shadow effect) -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M8,8 L8,20 L20,20 L20,8 Z" />
+    
+    <!-- Back square border -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M8,8 L8,20 L20,20 L20,8 Z"
+        android:strokeWidth="1.2"
+        android:strokeColor="#9E9E9E" />
+    
+    <!-- Front square -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M4,4 L4,16 L16,16 L16,4 Z" />
+    
+    <!-- Front square border -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M4,4 L4,16 L16,16 L16,4 Z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#424242" />
+    
+</vector> 

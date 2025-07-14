@@ -15,6 +15,7 @@ import com.example.amap.R
 import com.example.amap.RouteController
 import com.example.amap.core.Constants
 import com.example.amap.route.overlay.WalkRouteOverlay
+import com.example.amap.data.model.POIDisplayItem
 
 class MapController(private val aMap: AMap, private val context: Context) : AMapLocationListener {
 
@@ -40,10 +41,11 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
         setupZoomListener()
     }
 
-    fun addPOIMarkers(poiItems: List<PoiItem>, userLocation: Location?): List<Marker> {
+    fun addPOIMarkers(poiDisplayItems: List<POIDisplayItem>, userLocation: Location?): List<Marker> {
         val newMarkers = mutableListOf<Marker>()
         
-        for (poi in poiItems) {
+        for (poiDisplayItem in poiDisplayItems) {
+            val poi = poiDisplayItem.poiItem
             val latLng = LatLng(poi.latLonPoint.latitude, poi.latLonPoint.longitude)
             
             val snippet = if (userLocation != null) {
@@ -59,10 +61,17 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
             // Get custom marker icon based on POI category
             val markerIcon = getCustomMarkerIcon(poi)
             
+            // Use English name if available, otherwise use Chinese name
+            val markerTitle = if (!poiDisplayItem.englishTitle.isNullOrBlank() && poiDisplayItem.englishTitle != poiDisplayItem.title) {
+                poiDisplayItem.englishTitle
+            } else {
+                poiDisplayItem.title
+            }
+            
             val marker = aMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
-                    .title(poi.title ?: "Unknown POI")
+                    .title(markerTitle)
                     .snippet(snippet)
                     .icon(markerIcon)
                     .anchor(0.5f, 1.0f) // Center horizontally, bottom anchored
@@ -71,7 +80,7 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
             newMarkers.add(marker)
             poiMarkers.add(marker)
             
-            Log.d("MapController", "Added marker: ${poi.title} at ${poi.latLonPoint.latitude}, ${poi.latLonPoint.longitude}")
+            Log.d("MapController", "Added marker: $markerTitle (original: ${poiDisplayItem.title}) at ${poi.latLonPoint.latitude}, ${poi.latLonPoint.longitude}")
         }
         
         return newMarkers
@@ -139,8 +148,8 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
         return currentUserLocation
     }
 
-    fun centerOnResults(poiItems: List<PoiItem>, userLocation: Location?) {
-        if (poiItems.isEmpty()) return
+    fun centerOnResults(poiDisplayItems: List<POIDisplayItem>, userLocation: Location?) {
+        if (poiDisplayItems.isEmpty()) return
         
         val locationToUse = userLocation ?: currentUserLocation
         if (locationToUse != null) {
@@ -149,7 +158,7 @@ class MapController(private val aMap: AMap, private val context: Context) : AMap
                 LatLng(locationToUse.latitude, locationToUse.longitude), Constants.Map.DEFAULT_ZOOM_LEVEL))
         } else {
             // Center on first POI
-            val firstPoi = poiItems[0]
+            val firstPoi = poiDisplayItems[0].poiItem
             val firstLatLng = LatLng(firstPoi.latLonPoint.latitude, firstPoi.latLonPoint.longitude)
             aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(firstLatLng, Constants.Map.SEARCH_RESULTS_ZOOM_LEVEL))
         }

@@ -348,12 +348,14 @@ class MainActivity : AppCompatActivity() {
         if (success && poiItems != null) {
             val userLocation = if (::mapController.isInitialized) mapController.getUserLocation() else null
             
-            // Add markers to map
-            mapController.addPOIMarkers(poiItems, userLocation)
+            // Create display items with translations first
             val displayItems = searchResultsProcessor.processResults(poiItems, userLocation)
+            
+            // Add markers to map using translated names
+            mapController.addPOIMarkers(displayItems, userLocation)
             poiAdapter.updateResults(displayItems)
             showResultsWithAnimation()
-            mapController.centerOnResults(poiItems, userLocation)
+            mapController.centerOnResults(displayItems, userLocation)
         } else {
             hideResultsWithAnimation()
         }
@@ -364,12 +366,14 @@ class MainActivity : AppCompatActivity() {
         if (success && poiItems != null) {
             val userLocation = if (::mapController.isInitialized) mapController.getUserLocation() else null
             
-            // Add markers to map
-            mapController.addPOIMarkers(poiItems, userLocation)
+            // Create display items with translations first
             val displayItems = searchResultsProcessor.processResults(poiItems, userLocation)
+            
+            // Add markers to map using translated names
+            mapController.addPOIMarkers(displayItems, userLocation)
             poiAdapter.updateResults(displayItems)
             showResultsWithAnimation()
-            mapController.centerOnResults(poiItems, userLocation)
+            mapController.centerOnResults(displayItems, userLocation)
         } else {
             hideResultsWithAnimation()
         }

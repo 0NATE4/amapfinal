@@ -49,26 +49,26 @@ class POIResultsAdapter(
         fun bind(poi: POIDisplayItem) {
             Log.d("POIAdapter", "Binding POI: ${poi.title} (English: ${poi.englishTitle})")
             
-            // Display names: English first if available, then Chinese
+            // Display names with clear labels
             if (!poi.englishTitle.isNullOrBlank() && poi.englishTitle != poi.title) {
                 // Show English name as primary title
                 titleText.text = poi.englishTitle
-                // Show Chinese name as subtitle
-                subtitleText.text = poi.title
+                // Show Chinese name as subtitle with label
+                subtitleText.text = "Original: ${poi.title}"
                 subtitleText.visibility = View.VISIBLE
             } else {
-                // Show Chinese name only
-                titleText.text = poi.title
+                // Show Chinese name only with label
+                titleText.text = "Original: ${poi.title}"
                 subtitleText.visibility = View.GONE
             }
             
-            // Address remains Chinese as requested
-            addressText.text = poi.address
+            // Address with clear label (always Chinese as requested)
+            addressText.text = "Address: ${poi.address}"
             distanceText.text = poi.distance
             
             Log.d("POIAdapter", "Set primary title: '${titleText.text}'")
             Log.d("POIAdapter", "Set subtitle: '${if (subtitleText.visibility == View.VISIBLE) subtitleText.text else "hidden"}'")
-            Log.d("POIAdapter", "Set address: '${poi.address}'")
+            Log.d("POIAdapter", "Set address: '${addressText.text}'")
             
             itemView.setOnClickListener {
                 onItemClick(poi)

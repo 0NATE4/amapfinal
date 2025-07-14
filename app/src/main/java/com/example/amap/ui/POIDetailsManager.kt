@@ -21,9 +21,6 @@ import com.example.amap.search.POIWebService
 
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
-import android.widget.ImageButton
-import com.example.amap.util.PinyinUtil
-import com.example.amap.ai.DeepSeekAIService
 
 class POIDetailsManager(
     private val context: Context,
@@ -59,8 +56,6 @@ class POIDetailsManager(
         // Setup action buttons
         setupActionButtons(view, poiDisplayItem)
         
-        setupDetailsExpand(view, poiDisplayItem)
-        
         bottomSheet.show()
         currentBottomSheet = bottomSheet
         
@@ -76,29 +71,56 @@ class POIDetailsManager(
         if (!poiDisplayItem.englishTitle.isNullOrBlank() && poiDisplayItem.englishTitle != poiDisplayItem.title) {
             // Show English name as primary title
             titleView.text = poiDisplayItem.englishTitle
-            
-            // Create subtitle with Chinese name and category/address
-            val poiItem = poiDisplayItem.poiItem
-            val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
-            val shortAddress = poiDisplayItem.address.split(",").firstOrNull() ?: poiDisplayItem.address
-            
-            // Format: "Chinese Name • Category • Address"
-            subtitleView.text = "${poiDisplayItem.title} • $category • $shortAddress"
+            // Hide subtitle since we have dedicated sections below
+            subtitleView.visibility = View.GONE
         } else {
             // Show Chinese name as primary title
             titleView.text = poiDisplayItem.title
-            
-            // Create subtitle with category and address only
-            val poiItem = poiDisplayItem.poiItem
-            val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
-            val shortAddress = poiDisplayItem.address.split(",").firstOrNull() ?: poiDisplayItem.address
-            
-            // Format: "Category • Address"
-            subtitleView.text = "$category • $shortAddress"
+            // Hide subtitle since we have dedicated sections below
+            subtitleView.visibility = View.GONE
         }
+        
+        // Set up Chinese name and address sections with copy buttons
+        setupChineseNameSection(view, poiDisplayItem)
+        setupChineseAddressSection(view, poiDisplayItem)
         
         // Set distance in the info section
         view.findViewById<TextView>(R.id.detailDistance).text = poiDisplayItem.distance
+    }
+    
+    private fun setupChineseNameSection(view: View, poiDisplayItem: POIDisplayItem) {
+        val chineseNameContainer = view.findViewById<View>(R.id.chineseNameContainer)
+        val chineseNameText = view.findViewById<TextView>(R.id.chineseNameText)
+        val copyNameButton = view.findViewById<View>(R.id.copyNameButton)
+        
+        chineseNameText.text = poiDisplayItem.title
+        chineseNameContainer.visibility = View.VISIBLE
+        
+        copyNameButton.setOnClickListener {
+            copyToClipboard("Original Name", poiDisplayItem.title)
+        }
+    }
+    
+    private fun setupChineseAddressSection(view: View, poiDisplayItem: POIDisplayItem) {
+        val chineseAddressContainer = view.findViewById<View>(R.id.chineseAddressContainer)
+        val chineseAddressText = view.findViewById<TextView>(R.id.chineseAddressText)
+        val copyAddressButton = view.findViewById<View>(R.id.copyAddressButton)
+        
+        chineseAddressText.text = poiDisplayItem.address
+        chineseAddressContainer.visibility = View.VISIBLE
+        
+        copyAddressButton.setOnClickListener {
+            copyToClipboard("Address", poiDisplayItem.address)
+        }
+    }
+    
+    private fun copyToClipboard(label: String, text: String) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val clip = android.content.ClipData.newPlainText(label, text)
+        clipboard.setPrimaryClip(clip)
+        
+        // Show a brief toast or snackbar
+        android.widget.Toast.makeText(context, "$label copied", android.widget.Toast.LENGTH_SHORT).show()
     }
     
     private fun showLoadingState(view: View) {
@@ -392,45 +414,6 @@ class POIDetailsManager(
         
         val chooser = Intent.createChooser(shareIntent, "Share location")
         context.startActivity(chooser)
-    }
-    
-    private fun setupDetailsExpand(view: View, poiDisplayItem: POIDisplayItem) {
-        val btnExpand = view.findViewById<ImageButton>(R.id.btnExpandDetails)
-        val detailsContainer = view.findViewById<View>(R.id.detailsContainer)
-        val titlePinyinText = view.findViewById<TextView>(R.id.detailTitlePinyin)
-        val titleTranslationText = view.findViewById<TextView>(R.id.detailTitleTranslation)
-        val addressPinyinText = view.findViewById<TextView>(R.id.detailAddressPinyin)
-        val addressTranslationText = view.findViewById<TextView>(R.id.detailAddressTranslation)
-        val titleText = view.findViewById<TextView>(R.id.detailTitle)
-        val aiService = DeepSeekAIService()
-        var expanded = false
-        btnExpand.setOnClickListener {
-            expanded = !expanded
-            if (expanded) {
-                detailsContainer.visibility = View.VISIBLE
-                // Show pinyin instantly
-                titlePinyinText.text = PinyinUtil.toPinyin(poiDisplayItem.title)
-                addressPinyinText.text = PinyinUtil.toPinyin(poiDisplayItem.address)
-                // Show loading for translations
-                titleTranslationText.text = "Translating..."
-                addressTranslationText.text = "Translating..."
-                // Fetch AI translations
-                lifecycleScope.launch {
-                    val titleTranslation = aiService.translateToEnglish(poiDisplayItem.title)
-                    titleTranslationText.text = titleTranslation
-                }
-                lifecycleScope.launch {
-                    val addressTranslation = aiService.translateToEnglish(poiDisplayItem.address)
-                    addressTranslationText.text = addressTranslation
-                }
-                btnExpand.setImageResource(android.R.drawable.arrow_up_float)
-            } else {
-                detailsContainer.visibility = View.GONE
-                btnExpand.setImageResource(android.R.drawable.arrow_down_float)
-            }
-        }
-        // Don't override title - it's already set correctly in populateBasicInfo
-        detailsContainer.visibility = View.GONE
     }
     
     private fun extractPOIId(poiDisplayItem: POIDisplayItem): String? {
