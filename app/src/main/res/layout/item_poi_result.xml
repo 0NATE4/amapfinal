@@ -31,6 +31,17 @@
                 android:text="POI Title" />
 
             <TextView
+                android:id="@+id/poiSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="14sp"
+                android:textColor="@color/search_hint"
+                android:fontFamily="sans-serif"
+                android:visibility="gone"
+                android:text="Chinese Name" />
+
+            <TextView
                 android:id="@+id/poiAddress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

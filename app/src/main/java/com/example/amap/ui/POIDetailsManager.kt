@@ -69,32 +69,33 @@ class POIDetailsManager(
     }
     
     private fun populateBasicInfo(view: View, poiDisplayItem: POIDisplayItem) {
-        // Display title in English first, fallback to Chinese if no English translation
-        val titleDisplay = when {
-            !poiDisplayItem.englishTitle.isNullOrBlank() && poiDisplayItem.englishTitle != poiDisplayItem.title -> {
-                poiDisplayItem.englishTitle
-            }
-            else -> {
-                poiDisplayItem.title
-            }
-        }
-        view.findViewById<TextView>(R.id.detailTitle).text = titleDisplay
+        // Display both English and Chinese names
+        val titleView = view.findViewById<TextView>(R.id.detailTitle)
+        val subtitleView = view.findViewById<TextView>(R.id.detailSubtitle)
         
-        // Create subtitle with category and address
-        val poiItem = poiDisplayItem.poiItem
-        val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
-        
-        // Display address in English first, fallback to Chinese if no English translation
-        val addressDisplay = when {
-            !poiDisplayItem.englishAddress.isNullOrBlank() && poiDisplayItem.englishAddress != poiDisplayItem.address -> {
-                poiDisplayItem.englishAddress
-            }
-            else -> {
-                poiDisplayItem.address
-            }
+        if (!poiDisplayItem.englishTitle.isNullOrBlank() && poiDisplayItem.englishTitle != poiDisplayItem.title) {
+            // Show English name as primary title
+            titleView.text = poiDisplayItem.englishTitle
+            
+            // Create subtitle with Chinese name and category/address
+            val poiItem = poiDisplayItem.poiItem
+            val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
+            val shortAddress = poiDisplayItem.address.split(",").firstOrNull() ?: poiDisplayItem.address
+            
+            // Format: "Chinese Name • Category • Address"
+            subtitleView.text = "${poiDisplayItem.title} • $category • $shortAddress"
+        } else {
+            // Show Chinese name as primary title
+            titleView.text = poiDisplayItem.title
+            
+            // Create subtitle with category and address only
+            val poiItem = poiDisplayItem.poiItem
+            val category = poiItem.typeDes?.split(";")?.firstOrNull() ?: "POI"
+            val shortAddress = poiDisplayItem.address.split(",").firstOrNull() ?: poiDisplayItem.address
+            
+            // Format: "Category • Address"
+            subtitleView.text = "$category • $shortAddress"
         }
-        val shortAddress = addressDisplay.split(",").firstOrNull() ?: addressDisplay
-        view.findViewById<TextView>(R.id.detailSubtitle).text = "$category • $shortAddress"
         
         // Set distance in the info section
         view.findViewById<TextView>(R.id.detailDistance).text = poiDisplayItem.distance

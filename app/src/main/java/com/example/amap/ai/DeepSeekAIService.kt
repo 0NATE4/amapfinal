@@ -280,6 +280,91 @@ class DeepSeekAIService {
             text // Fallback to original if translation fails
         }
     }
+
+    /**
+     * Translates a list of business names from Chinese to English in a single API call
+     * This is more efficient than individual translations and maintains consistency
+     */
+    suspend fun translateBusinessNames(businessNames: List<String>): List<String> = withContext(Dispatchers.IO) {
+        if (businessNames.isEmpty()) return@withContext emptyList()
+        
+        try {
+            Log.d("DeepSeekAI", "Translating ${businessNames.size} business names")
+            
+            val prompt = buildTranslationPrompt(businessNames)
+            val response = callDeepSeekAPI(prompt)
+            parseTranslationResponse(response, businessNames)
+        } catch (e: Exception) {
+            Log.e("DeepSeekAI", "Error translating business names: ${e.message}", e)
+            // Fallback to original names if translation fails
+            businessNames
+        }
+    }
+
+    private fun buildTranslationPrompt(businessNames: List<String>): String {
+        val businessNamesJson = JSONArray(businessNames).toString()
+        
+        return """
+            Translate the following Chinese business names to English. These are names of places, restaurants, shops, and other businesses from Chinese maps.
+            
+            Rules for translation:
+            1. Provide natural English translations that sound good to English speakers
+            2. Keep proper nouns (like chain names) if they have official English names
+            3. For generic descriptions, translate to common English terms
+            4. If unsure, provide a reasonable English equivalent
+            5. Return ONLY a JSON array of strings in the same order as input
+            6. Do not include any explanations or additional text
+            7. If a name is already in English or mixed, keep the English parts and translate Chinese parts
+            
+            Examples:
+            - "麦当劳" → "McDonald's"
+            - "星巴克咖啡" → "Starbucks Coffee"
+            - "北京烤鸭店" → "Beijing Roast Duck Restaurant"
+            - "中国银行" → "Bank of China"
+            - "购物中心" → "Shopping Center"
+            - "人民医院" → "People's Hospital"
+            
+            Business names to translate:
+            $businessNamesJson
+            
+            Return only the JSON array of translated names:
+        """.trimIndent()
+    }
+
+    private fun parseTranslationResponse(response: String, originalNames: List<String>): List<String> {
+        try {
+            Log.d("DeepSeekAI", "Parsing translation response...")
+            val jsonResponse = JSONObject(response)
+            val choices = jsonResponse.getJSONArray("choices")
+            val firstChoice = choices.getJSONObject(0)
+            val message = firstChoice.getJSONObject("message")
+            val content = message.getString("content").trim()
+            
+            Log.d("DeepSeekAI", "Translation content: $content")
+            
+            // Parse the JSON array of translations
+            val translationsArray = JSONArray(content)
+            val translations = mutableListOf<String>()
+            
+            for (i in 0 until translationsArray.length()) {
+                translations.add(translationsArray.getString(i))
+            }
+            
+            // Ensure we have the same number of translations as original names
+            if (translations.size != originalNames.size) {
+                Log.w("DeepSeekAI", "Translation count mismatch: expected ${originalNames.size}, got ${translations.size}")
+                return originalNames // Fallback to original names
+            }
+            
+            Log.d("DeepSeekAI", "Successfully translated ${translations.size} business names")
+            return translations
+            
+        } catch (e: Exception) {
+            Log.e("DeepSeekAI", "Error parsing translation response: ${e.message}", e)
+            Log.e("DeepSeekAI", "Response that failed to parse: $response")
+            return originalNames // Fallback to original names
+        }
+    }
 }
 
 /**
